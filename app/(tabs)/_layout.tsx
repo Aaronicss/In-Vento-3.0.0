@@ -38,7 +38,7 @@ export default function TabLayout() {
         name="inventory"
         options={{
           title: 'Inventory',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="inventory" color={color} />,
         }}
       />
 
@@ -46,7 +46,7 @@ export default function TabLayout() {
         name="orders"
         options={{
           title: 'Orders',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="chevron.right" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="list.bullet" color={color} />,
         }}
       />
 
@@ -54,9 +54,10 @@ export default function TabLayout() {
         name="take-order"
         options={{
           title: 'Take Order',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="paperplane.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="cart.fill" color={color} />,
         }}
       />
+      {/* Alerts and Statistics are now top-level app pages (in `app/`) so they are removed from the tabs layout */}
     </Tabs>
   );
 }

@@ -140,20 +140,6 @@ export default function InventoryScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/home')}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.title}>IN-VENTO:</Text>
-        <Text style={styles.subtitle}>Intelligent Inventory System</Text>
-      </View>
-
       {/* Greeting */}
       <Text style={styles.greeting}>DASHBOARD</Text>
 
