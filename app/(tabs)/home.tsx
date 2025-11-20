@@ -1,16 +1,31 @@
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { useInventory } from '@/contexts/InventoryContext';
+import { useOrders } from '@/contexts/OrdersContext';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TileHome() {
   const router = useRouter();
+  const { inventoryItems } = useInventory();
+  const { orders } = useOrders();
+
+  // entrance animation for tiles
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  // force two-column layout on all screen sizes
+  const isTwoColumn = true;
+
+  useEffect(() => {
+    Animated.timing(entrance, { toValue: 1, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
+  }, [entrance]);
 
   const tiles = [
-    { key: 'inventory', label: 'Inventory', route: '/(tabs)/inventory' },
-    { key: 'orders', label: 'Orders', route: '/orders' },
-    { key: 'take-order', label: 'Take Order', route: '/take-order' },
-    { key: 'alerts', label: 'Alerts', route: '/alerts' },
+    { key: 'inventory', label: 'Inventory', route: '/(tabs)/inventory', icon: 'inventory', count: inventoryItems.length },
+    { key: 'orders', label: 'Orders', route: '/orders', icon: 'list.bullet', count: orders.length },
+    { key: 'take-order', label: 'Take Order', route: '/take-order', icon: 'cart.fill', count: 0 },
+    { key: 'alerts', label: 'Alerts', route: '/alerts', icon: 'bell.fill', count: 0 },
   ];
 
   return (
@@ -19,15 +34,40 @@ export default function TileHome() {
       <Text style={styles.subtitle}>Quick Navigation</Text>
 
       <View style={styles.grid}>
-        {tiles.map((t) => (
-          <TouchableOpacity
-            key={t.key}
-            style={styles.tile}
-            onPress={() => router.push(t.route as any)}
-          >
-            <Text style={styles.tileLabel}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {tiles.map((t, idx) => {
+          const animatedStyle = {
+            opacity: entrance,
+            transform: [
+              {
+                translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }),
+              },
+            ],
+          } as any;
+
+          return (
+            <Animated.View key={t.key} style={[styles.tileWrapper, styles.twoCol, animatedStyle]}>
+              <TouchableOpacity
+                style={styles.tile}
+                onPress={() => router.push(t.route as any)}
+                activeOpacity={0.9}
+              >
+                <View style={styles.tileLeft}>
+                  <IconSymbol name={t.icon as any} size={34} color={Colors.light.tint} />
+                  <View style={styles.tileTextWrap}>
+                    <Text style={styles.tileLabel}>{t.label}</Text>
+                    <Text style={styles.tileHint}>Tap to open</Text>
+                  </View>
+                </View>
+
+                {t.count > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{t.count}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
       </View>
     </View>
   );
@@ -57,15 +97,27 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
+  tileWrapper: {
+    marginBottom: 12,
+  },
+  twoCol: {
+    width: '48%'
+  },
+  oneCol: {
+    width: '100%'
+  },
   tile: {
-    width: '48%',
-    height: 120,
+    width: '100%',
+    height: 140,
     backgroundColor: '#FFF7ED',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(244,162,97,0.18)',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -78,4 +130,34 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.light.tint,
   },
+  iconRow: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  badge: {
+    backgroundColor: Colors.light.tint,
+    minWidth: 22,
+    paddingHorizontal: 6,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  tileHint: {
+    marginTop: 6,
+    fontSize: 12,
+    color: 'rgba(17,24,28,0.6)'
+  }
+  ,
+  tileLeft: { flexDirection: 'row', alignItems: 'center' },
+  tileTextWrap: { marginLeft: 12 },
 });
