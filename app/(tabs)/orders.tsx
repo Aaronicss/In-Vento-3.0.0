@@ -194,22 +194,7 @@ export default function HomeScreen() {
         })
       )}
 
-      {/* Inventory Alerts */}
-      <Text style={styles.sectionTitle}>INVENTORY ALERTS!</Text>
-
-      <View style={styles.alertSection}>
-        <Text style={styles.alertTitle}>BURGER BUN</Text>
-        <ProgressBar progress={0.4} color="orange" style={styles.progressBar} />
-        <View style={styles.alertRow}>
-          <Text style={styles.timeLeft}>1d 2hrs</Text>
-          <View style={styles.warningBadge}>
-            <Text style={styles.warningText}>Warning</Text>
-          </View>
-          <TouchableOpacity style={styles.smallButton}><Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>+</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.smallButton}><Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>-</Text></TouchableOpacity>
-          <Text style={styles.stockCount}>2</Text>
-        </View>
-      </View>
+      
     </ScrollView>
   );
 }

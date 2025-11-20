@@ -6,8 +6,7 @@ import { OrderItem, useOrders } from '../../contexts/OrdersContext';
 
 export default function TakeOrderScreen() {
   const router = useRouter();
-  const { addOrder } = useOrders();
-  const [tableNumber, setTableNumber] = useState('');
+  const { addOrder, orders } = useOrders();
   const [items, setItems] = useState<OrderItem[]>([
     { id: 'item-1', name: '', quantity: 1 },
   ]);
@@ -32,12 +31,15 @@ export default function TakeOrderScreen() {
 
   const [loading, setLoading] = useState(false);
 
+  const nextCustomerNumber = React.useMemo(() => {
+    if (!orders || orders.length === 0) return 1;
+    const max = Math.max(...orders.map((o) => o.tableNumber || 0));
+    return max + 1;
+  }, [orders]);
+
   const handleConfirm = async () => {
-    // Validation
-    if (!tableNumber || isNaN(Number(tableNumber)) || Number(tableNumber) <= 0) {
-      Alert.alert('Invalid Table Number', 'Please enter a valid table number.');
-      return;
-    }
+    // use auto-incremented customer number
+    const customerNumber = Number(nextCustomerNumber);
 
     const validItems = items.filter((item) => item.name.trim() !== '' && item.quantity > 0);
     if (validItems.length === 0) {
@@ -48,9 +50,9 @@ export default function TakeOrderScreen() {
     setLoading(true);
     try {
       // Add order to context
-      await addOrder(Number(tableNumber), validItems);
-      
-      Alert.alert('Order Added', `Order for Table #${tableNumber} has been added!`, [
+      await addOrder(customerNumber, validItems);
+
+      Alert.alert('Order Added', `Order for Customer #${customerNumber} has been added!`, [
         {
           text: 'OK',
           onPress: () => router.back(),
@@ -72,13 +74,11 @@ export default function TakeOrderScreen() {
 
       {/* Table Number Input */}
       <View style={styles.section}>
-        <Text style={styles.label}>Table Number</Text>
+        <Text style={styles.label}>Customer Number</Text>
         <TextInput
-          style={styles.input}
-          placeholder="Enter table number"
-          value={tableNumber}
-          onChangeText={setTableNumber}
-          keyboardType="number-pad"
+          style={[styles.input, { opacity: 0.9 }]}
+          value={String(nextCustomerNumber)}
+          editable={false}
         />
       </View>
 

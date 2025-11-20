@@ -3,13 +3,27 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { InventoryProvider } from '../contexts/InventoryContext';
 import { OrdersProvider } from '../contexts/OrdersContext';
+import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
   const router = useRouter();
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Logout failed', e);
+    } finally {
+      setSidebarOpen(false);
+      router.push('/login');
+    }
+  };
 
   const Header = () => (
     <SafeAreaView style={styles.headerSafeArea}>
@@ -17,7 +31,7 @@ export default function RootLayout() {
         <Text style={styles.headerTitle}>IN-VENTO</Text>
         <TouchableOpacity
           style={styles.profile}
-          onPress={() => router.push('/login')}
+          onPress={() => setSidebarOpen(true)}
         >
           <MaterialIcons name="person" size={28} color={Colors.light.text} />
           <Text style={styles.profileLabel}>Profile</Text>
@@ -50,6 +64,23 @@ export default function RootLayout() {
           </Stack>
 
           <StatusBar style="auto" />
+          {sidebarOpen && (
+            <View style={styles.overlayContainer} pointerEvents="box-none">
+              <Pressable style={styles.overlay} onPress={() => setSidebarOpen(false)} />
+              <View style={styles.sidebar}>
+                <Text style={styles.sidebarTitle}>Account</Text>
+                <TouchableOpacity style={styles.sidebarButton} onPress={() => { setSidebarOpen(false); router.push('/accounts'); }}>
+                  <Text style={styles.sidebarButtonText}>Accounts Management</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sidebarButton} onPress={() => { setSidebarOpen(false); router.push('/preferences'); }}>
+                  <Text style={styles.sidebarButtonText}>Preferences</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.sidebarButton, styles.logoutButton]} onPress={handleLogout}>
+                  <Text style={[styles.sidebarButtonText, { color: '#fff' }]}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </ThemeProvider>
       </InventoryProvider>
     </OrdersProvider>
@@ -81,5 +112,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     fontWeight: '600',
+  },
+  overlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sidebar: {
+    width: 260,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  sidebarTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
+  sidebarButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+    marginBottom: 10,
+  },
+  sidebarButtonText: {
+    fontSize: 15,
+    color: '#111827',
+    fontWeight: '700',
+  },
+  logoutButton: {
+    backgroundColor: Colors.light.tint,
   },
 });
