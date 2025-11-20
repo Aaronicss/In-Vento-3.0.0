@@ -46,55 +46,59 @@ export default function AddInventoryItemScreen() {
   const router = useRouter();
   const { addInventoryItem } = useInventory();
   const [loading, setLoading] = useState(false);
-  const [itemName, setItemName] = useState('');
-  const [count, setCount] = useState('1');
-  const [shelfLifeDays, setShelfLifeDays] = useState('7');
-  const [iconKey, setIconKey] = useState('burger');
-  const [predictedExpiryDate, setPredictedExpiryDate] = useState<Date | null>(null);
-  const [fetchingPrediction, setFetchingPrediction] = useState(false);
-  const lastRequestedRef = useRef<string | null>(null);
+
+  // Support multiple rows similar to take-order
+  const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean }>>([
+    { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false },
+  ]);
+
+  // track last requested per-row to avoid race conditions
+  const lastRequestedRef = useRef<Record<string, string | null>>({});
 
   const handleConfirm = async () => {
-    // Validation
-    if (!itemName.trim()) {
-      Alert.alert('Invalid Item Name', 'Please enter an item name.');
-      return;
-    }
-
-    const countNum = Number(count);
-    if (isNaN(countNum) || countNum <= 0) {
-      Alert.alert('Invalid Count', 'Please enter a valid count (greater than 0).');
-      return;
-    }
-
-    const shelfLifeNum = Number(shelfLifeDays);
-    if (isNaN(shelfLifeNum) || shelfLifeNum <= 0) {
-      Alert.alert('Invalid Shelf Life', 'Please enter a valid shelf life in days (greater than 0).');
+    // Validate rows
+    const validRows = rows.filter(r => r.name.trim() !== '' && Number(r.count) > 0);
+    if (validRows.length === 0) {
+      Alert.alert('No Items', 'Please add at least one item to add to inventory.');
       return;
     }
 
     setLoading(true);
     try {
-      // Add item to inventory (pass icon key as string)
-      // If we have a predictedExpiryDate from the ML API, pass it so it's stored directly.
-      await addInventoryItem(
-        itemName.trim().toUpperCase(),
-        iconKey.toLowerCase(),
-        countNum,
-        shelfLifeNum,
-        predictedExpiryDate || undefined
-      );
-      Alert.alert('Item Added', `${itemName} has been added to inventory!`, [
+      for (const r of validRows) {
+        const name = r.name.trim().toUpperCase();
+        const countNum = Number(r.count);
+        const shelfLifeNum = Number(r.shelfLifeDays) || 7;
+        const icon = r.iconKey.toLowerCase();
+        const expiresAt = r.predictedExpiryDate || undefined;
+
+        await addInventoryItem(name, icon, countNum, shelfLifeNum, expiresAt);
+      }
+
+      Alert.alert('Items Added', `${validRows.length} item(s) have been added to inventory!`, [
         {
           text: 'OK',
           onPress: () => router.back(),
         },
       ]);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add inventory item');
+      Alert.alert('Error', error.message || 'Failed to add inventory items');
     } finally {
       setLoading(false);
     }
+  };
+
+  const addRow = () => {
+    setRows(prev => [...prev, { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false }]);
+  };
+
+  const removeRow = (id: string) => {
+    if (rows.length <= 1) return;
+    setRows(prev => prev.filter(r => r.id !== id));
+  };
+
+  const updateRow = (id: string, patch: Partial<typeof rows[number]>) => {
+    setRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
   };
 
   return (
@@ -104,116 +108,107 @@ export default function AddInventoryItemScreen() {
         <Text style={styles.subtitle}>Enter item details below</Text>
       </View>
 
-      {/* Item Name Input */}
+      {/* Rows Section */}
       <View style={styles.section}>
-  <Text style={styles.label}>Item Name</Text>
+        <Text style={styles.label}>Items</Text>
+        {rows.map((r, idx) => (
+          <View key={r.id} style={styles.itemCard}>
+            <View style={styles.itemHeader}>
+              <Text style={styles.itemNumber}>Item {idx + 1}</Text>
+              {rows.length > 1 && (
+                <TouchableOpacity style={styles.removeButton} onPress={() => removeRow(r.id)}>
+                  <Text style={styles.removeButtonText}>Remove</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-  <View style={styles.pickerWrapper}>
-  <Picker
-  selectedValue={itemName}
-  onValueChange={(value) => {
-    setItemName(value);
+            <Text style={[styles.label, { marginBottom: 6 }]}>Item Name</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={r.name}
+                onValueChange={(value) => {
+                  updateRow(r.id, { name: value });
+                  if (value && nameToIconMap[value]) updateRow(r.id, { iconKey: nameToIconMap[value] });
 
-    if (value && nameToIconMap[value]) {
-      setIconKey(nameToIconMap[value]);
-    }
+                  if (value) {
+                    // per-row prediction tracking
+                    lastRequestedRef.current[r.id] = value;
+                    updateRow(r.id, { fetchingPrediction: true });
 
-    // Fetch predicted shelf life from API (ML returns hours_until_expiry)
-    if (value) {
-      // record the item we requested prediction for — prevents race conditions
-      lastRequestedRef.current = value;
-      setFetchingPrediction(true);
+                    const extra = Constants.expoConfig?.extra as { weatherCity?: string; weatherApiKey?: string } | undefined;
+                    const city = extra?.weatherCity || process.env.EXPO_PUBLIC_WEATHER_CITY || '';
+                    const apiKey = extra?.weatherApiKey || process.env.EXPO_PUBLIC_WEATHER_API_KEY || '';
 
-      // Try to read weather API key and city from Expo Constants or env
-      const extra = Constants.expoConfig?.extra as { weatherCity?: string; weatherApiKey?: string } | undefined;
-      const city = extra?.weatherCity || process.env.EXPO_PUBLIC_WEATHER_CITY || '';
-      const apiKey = extra?.weatherApiKey || process.env.EXPO_PUBLIC_WEATHER_API_KEY || '';
+                    const weatherPromise = apiKey && city ? fetchWeatherData(city, apiKey).catch(err => {
+                      console.error('Weather fetch failed, using defaults:', err);
+                      return { temperature: 5, humidity: 50 };
+                    }) : Promise.resolve({ temperature: 5, humidity: 50 });
 
-      // Fetch weather if key and city are available; otherwise use defaults
-      const weatherPromise = apiKey && city ? fetchWeatherData(city, apiKey).catch(err => {
-        console.error('Weather fetch failed, using defaults:', err);
-        return { temperature: 5, humidity: 50 };
-      }) : Promise.resolve({ temperature: 5, humidity: 50 });
+                    weatherPromise
+                      .then(({ temperature, humidity }) => getShelfLifePrediction(value, temperature, humidity, 0))
+                      .then((predictedHours) => {
+                        if (lastRequestedRef.current[r.id] !== value) return;
+                        const days = Math.max(1, Math.ceil(predictedHours / 24));
+                        const now = new Date();
+                        const expiryDate = new Date(now.getTime() + predictedHours * 60 * 60 * 1000);
+                        updateRow(r.id, { shelfLifeDays: days.toString(), predictedExpiryDate: expiryDate });
+                      })
+                      .catch((error) => {
+                        console.error('Error fetching shelf life:', error);
+                        if (lastRequestedRef.current[r.id] !== value) return;
+                        updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
+                      })
+                      .finally(() => {
+                        if (lastRequestedRef.current[r.id] === value) lastRequestedRef.current[r.id] = null;
+                        updateRow(r.id, { fetchingPrediction: false });
+                      });
+                  } else {
+                    lastRequestedRef.current[r.id] = null;
+                    updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
+                  }
+                }}
+              >
+                <Picker.Item label="Select an item..." value="" />
+                <Picker.Item label="BURGER BUN" value="BURGER BUN" />
+                <Picker.Item label="BEEF" value="BEEF" />
+                <Picker.Item label="LETTUCE" value="LETTUCE" />
+                <Picker.Item label="PICKLES" value="PICKLES" />
+                <Picker.Item label="CHEESE" value="CHEESE" />
+                <Picker.Item label="TOMATO" value="TOMATO" />
+                <Picker.Item label="ONION" value="ONION" />
+              </Picker>
+            </View>
 
-      weatherPromise
-        .then(({ temperature, humidity }) => {
-          return getShelfLifePrediction(value, temperature, humidity, 0);
-        })
-        .then((predictedHours) => {
-          // ignore stale responses
-          if (lastRequestedRef.current !== value) return;
-          // Convert hours to days for display (round up)
-          const days = Math.max(1, Math.ceil(predictedHours / 24));
-          setShelfLifeDays(days.toString());
+            {r.name && r.fetchingPrediction && (
+              <View style={styles.predictionCard}>
+                <Text style={styles.predictionLabel}>Fetching Prediction...</Text>
+                <Text style={styles.predictionDate}>Loading...</Text>
+                <Text style={styles.predictionShelfLife}>Please wait</Text>
+              </View>
+            )}
 
-          // Calculate expiry date by adding hours
-          const now = new Date();
-          const expiryDate = new Date(now.getTime() + predictedHours * 60 * 60 * 1000);
-          setPredictedExpiryDate(expiryDate);
-        })
-        .catch((error) => {
-          console.error('Error fetching shelf life:', error);
-          // Only apply fallback if this is the latest requested item
-          if (lastRequestedRef.current !== value) return;
-          // Fall back to 7 days if API call fails
-          setShelfLifeDays('7');
-          const now = new Date();
-          const expiryDate = new Date(now);
-          expiryDate.setDate(expiryDate.getDate() + 7);
-          setPredictedExpiryDate(expiryDate);
-        })
-        .finally(() => {
-          // clear request marker and fetching flag
-          if (lastRequestedRef.current === value) lastRequestedRef.current = null;
-          setFetchingPrediction(false);
-        });
-    } else {
-      lastRequestedRef.current = null;
-      setShelfLifeDays('7');
-      setPredictedExpiryDate(null);
-    }
-  }}
->
-  <Picker.Item label="Select an item..." value="" />
+            {r.name && !r.fetchingPrediction && r.predictedExpiryDate && (
+              <View style={styles.predictionCard}>
+                <Text style={styles.predictionLabel}>Predicted Expiry</Text>
+                <Text style={styles.predictionDate}>{formatDateTime(r.predictedExpiryDate)}</Text>
+                <Text style={styles.predictionShelfLife}>Shelf life: {r.shelfLifeDays} day{Number(r.shelfLifeDays) === 1 ? '' : 's'}</Text>
+              </View>
+            )}
 
-  <Picker.Item label="BURGER BUN" value="BURGER BUN" />
-  <Picker.Item label="BEEF" value="BEEF" />
-  <Picker.Item label="LETTUCE" value="LETTUCE" />
-  <Picker.Item label="PICKLES" value="PICKLES" />
-  <Picker.Item label="CHEESE" value="CHEESE" />
-  <Picker.Item label="TOMATO" value="TOMATO" />
-  <Picker.Item label="ONION" value="ONION" />
-</Picker></View>
+            <Text style={[styles.label, { marginTop: 8 }]}>Quantity</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter quantity"
+              value={r.count}
+              onChangeText={(v) => updateRow(r.id, { count: v })}
+              keyboardType="number-pad"
+            />
+          </View>
+        ))}
 
-  {/* Prediction UI: show loading while fetching, otherwise show the computed expiry */}
-  {itemName && fetchingPrediction && (
-    <View style={styles.predictionCard}>
-      <Text style={styles.predictionLabel}>Fetching Prediction...</Text>
-      <Text style={styles.predictionDate}>Loading...</Text>
-      <Text style={styles.predictionShelfLife}>Please wait</Text>
-    </View>
-  )}
-
-  {itemName && !fetchingPrediction && predictedExpiryDate && (
-    <View style={styles.predictionCard}>
-      <Text style={styles.predictionLabel}>Predicted Expiry</Text>
-      <Text style={styles.predictionDate}>{formatDateTime(predictedExpiryDate)}</Text>
-      <Text style={styles.predictionShelfLife}>Shelf life: {shelfLifeDays} day{Number(shelfLifeDays) === 1 ? '' : 's'}</Text>
-    </View>
-  )}
-
-</View>
-
-      {/* Count Input */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Quantity</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter quantity"
-          value={count}
-          onChangeText={setCount}
-          keyboardType="number-pad"
-        />
+        <TouchableOpacity style={[styles.addButton, { marginTop: 6 }]} onPress={addRow}>
+          <Text style={styles.addButtonText}>+ Add Another Item</Text>
+        </TouchableOpacity>
       </View>
       {/* Confirm Button */}
       <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
@@ -339,5 +334,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(17, 24, 28, 0.8)',
     fontWeight: '500',
+  },
+  itemCard: {
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.light.tint,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 162, 97, 0.18)',
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  itemNumber: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.light.tint,
+  },
+  removeButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#FF5252',
+    borderRadius: 8,
+  },
+  removeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  addButton: {
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
