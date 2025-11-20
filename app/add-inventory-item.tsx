@@ -49,7 +49,7 @@ export default function AddInventoryItemScreen() {
 
   // Support multiple rows similar to take-order
   const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>([
-    { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: 'REFRIGERATOR' },
+    { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' },
   ]);
 
   // track last requested per-row to avoid race conditions
@@ -89,7 +89,7 @@ export default function AddInventoryItemScreen() {
   };
 
   const addRow = () => {
-    setRows(prev => [...prev, { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false }]);
+    setRows(prev => [...prev, { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' }]);
   };
 
   const removeRow = (id: string) => {
@@ -99,6 +99,41 @@ export default function AddInventoryItemScreen() {
 
   const updateRow = (id: string, patch: Partial<typeof rows[number]>) => {
     setRows(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+  };
+
+  // Helper to fetch freshness prediction for a specific row+ingredient
+  const fetchPredictionForRow = (rowId: string, ingredient: string) => {
+    // mark requested ingredient and set fetching flag
+    lastRequestedRef.current[rowId] = ingredient;
+    updateRow(rowId, { fetchingPrediction: true });
+
+    const extra = Constants.expoConfig?.extra as { weatherCity?: string; weatherApiKey?: string } | undefined;
+    const city = extra?.weatherCity || process.env.EXPO_PUBLIC_WEATHER_CITY || '';
+    const apiKey = extra?.weatherApiKey || process.env.EXPO_PUBLIC_WEATHER_API_KEY || '';
+
+    const weatherPromise = apiKey && city ? fetchWeatherData(city, apiKey).catch(err => {
+      console.error('Weather fetch failed, using defaults:', err);
+      return { temperature: 5, humidity: 50 };
+    }) : Promise.resolve({ temperature: 5, humidity: 50 });
+
+    weatherPromise
+      .then(({ temperature, humidity }) => getShelfLifePrediction(ingredient, temperature, humidity, 0))
+      .then((predictedHours) => {
+        if (lastRequestedRef.current[rowId] !== ingredient) return;
+        const days = Math.max(1, Math.ceil(predictedHours / 24));
+        const now = new Date();
+        const expiryDate = new Date(now.getTime() + predictedHours * 60 * 60 * 1000);
+        updateRow(rowId, { shelfLifeDays: days.toString(), predictedExpiryDate: expiryDate });
+      })
+      .catch((error) => {
+        console.error('Error fetching shelf life:', error);
+        if (lastRequestedRef.current[rowId] !== ingredient) return;
+        updateRow(rowId, { shelfLifeDays: '7', predictedExpiryDate: null });
+      })
+      .finally(() => {
+        if (lastRequestedRef.current[rowId] === ingredient) lastRequestedRef.current[rowId] = null;
+        updateRow(rowId, { fetchingPrediction: false });
+      });
   };
 
   return (
@@ -130,39 +165,8 @@ export default function AddInventoryItemScreen() {
                   updateRow(r.id, { name: value });
                   if (value && nameToIconMap[value]) updateRow(r.id, { iconKey: nameToIconMap[value] });
 
-                  if (value) {
-                    // per-row prediction tracking
-                    lastRequestedRef.current[r.id] = value;
-                    updateRow(r.id, { fetchingPrediction: true });
-
-                    const extra = Constants.expoConfig?.extra as { weatherCity?: string; weatherApiKey?: string } | undefined;
-                    const city = extra?.weatherCity || process.env.EXPO_PUBLIC_WEATHER_CITY || '';
-                    const apiKey = extra?.weatherApiKey || process.env.EXPO_PUBLIC_WEATHER_API_KEY || '';
-
-                    const weatherPromise = apiKey && city ? fetchWeatherData(city, apiKey).catch(err => {
-                      console.error('Weather fetch failed, using defaults:', err);
-                      return { temperature: 5, humidity: 50 };
-                    }) : Promise.resolve({ temperature: 5, humidity: 50 });
-
-                    weatherPromise
-                      .then(({ temperature, humidity }) => getShelfLifePrediction(value, temperature, humidity, 0))
-                      .then((predictedHours) => {
-                        if (lastRequestedRef.current[r.id] !== value) return;
-                        const days = Math.max(1, Math.ceil(predictedHours / 24));
-                        const now = new Date();
-                        const expiryDate = new Date(now.getTime() + predictedHours * 60 * 60 * 1000);
-                        updateRow(r.id, { shelfLifeDays: days.toString(), predictedExpiryDate: expiryDate });
-                      })
-                      .catch((error) => {
-                        console.error('Error fetching shelf life:', error);
-                        if (lastRequestedRef.current[r.id] !== value) return;
-                        updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
-                      })
-                      .finally(() => {
-                        if (lastRequestedRef.current[r.id] === value) lastRequestedRef.current[r.id] = null;
-                        updateRow(r.id, { fetchingPrediction: false });
-                      });
-                  } else {
+                  // Do not call prediction here. Prediction will be triggered when the user selects a storage location.
+                  if (!value) {
                     lastRequestedRef.current[r.id] = null;
                     updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
                   }
@@ -198,9 +202,17 @@ export default function AddInventoryItemScreen() {
                 <Text style={[styles.label, { marginTop: 8 }]}>Storage Location</Text>
                 <View style={[styles.pickerWrapper, { marginBottom: 8 }]}> 
                   <Picker
-                    selectedValue={r.storageLocation || 'REFRIGERATOR'}
-                    onValueChange={(value) => updateRow(r.id, { storageLocation: value })}
+                    selectedValue={r.storageLocation ?? ''}
+                    onValueChange={(value) => {
+                      updateRow(r.id, { storageLocation: value });
+                      // trigger prediction only when storage location is selected and we have an ingredient name
+                      const ingredient = rows.find(rr => rr.id === r.id)?.name;
+                      if (ingredient && ingredient !== '' && value) {
+                        fetchPredictionForRow(r.id, ingredient);
+                      }
+                    }}
                   >
+                    <Picker.Item label="Select the storage location..." value="" />
                     <Picker.Item label="REFRIGERATOR" value="REFRIGERATOR" />
                     <Picker.Item label="FREEZER" value="FREEZER" />
                     <Picker.Item label="PANTRY" value="PANTRY" />
