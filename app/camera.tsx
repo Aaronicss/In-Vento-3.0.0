@@ -5,7 +5,7 @@ import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 🔥 Roboflow API URL (Detection or Classification)
-const MODEL_NAME = "in-vento-n4vxc"; // example: "food-items"
+const MODEL_NAME = "in-vento-xuxyq"; // example: "food-items"
 const MODEL_VERSION = "3";
 const API_KEY = "F02xuve8P2KEBhMSFZph";
 
