@@ -16,12 +16,12 @@ export default function TakeOrderScreen() {
 
   // Recipe definitions (ingredient names should match inventory `name` values)
   const RECIPES: { [key: string]: Array<{ ingredient: string; qty: number }> } = {
-    'Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }],
-    'Classic Hamburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }],
-    'Deluxe Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }],
-    'Garden Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }],
-    'Double Cheese Burger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 2 }],
-    'Fully Loaded': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }],
+    'Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Classic Hamburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Deluxe Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Garden Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Double Cheese Burger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 2 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Fully Loaded': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
   };
 
   // Compute recipes that are currently available given inventory counts
