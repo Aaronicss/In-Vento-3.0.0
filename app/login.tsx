@@ -3,11 +3,14 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Easing, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { upsertProfile } from '../services/profileService';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [phone, setPhone] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -72,15 +75,63 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      // Normalize phone to E.164-like form: remove spaces and ensure leading '+' if provided
+      let normalizedPhone = phone?.trim() || '';
+      if (normalizedPhone) {
+        normalizedPhone = normalizedPhone.replace(/\s+/g, '');
+        if (!normalizedPhone.startsWith('+')) normalizedPhone = `+${normalizedPhone}`;
+      }
       const { data, error } = await supabase.auth.signUp({
         email: email,
         password: password,
+        options: {
+          data: {
+            display_name: displayName || undefined,
+            phone: normalizedPhone || undefined,
+          },
+        },
       });
+
+      // Log response for debugging (inspect data.user and metadata)
+      // This helps verify whether Supabase accepted the `phone` metadata.
+      // You can view this output in Metro/Expo logs or device console.
+      // eslint-disable-next-line no-console
+      console.log('signUp response:', { data, error });
 
       if (error) throw error;
 
       if (data.user) {
         Alert.alert('Sign Up Successful', 'Your account has been created! Please check your email to verify your account.');
+
+        // If your project uses a `profiles` table, try to persist display name and phone there.
+        // This operation is guarded so it won't crash if the table doesn't exist.
+        try {
+          await upsertProfile({
+            id: data.user.id,
+            email: email,
+            display_name: displayName || null,
+            phone: normalizedPhone || null,
+          });
+        } catch (upsertError) {
+          // eslint-disable-next-line no-console
+          console.warn('profiles upsert failed (maybe table missing):', upsertError);
+        }
+
+        // Also try to set the top-level `phone` field on the Auth user (so it appears under Users.phone)
+        // This requires a valid session (we have one from signUp when email confirmation returns a session).
+        if (normalizedPhone) {
+          try {
+            const { error: updateError } = await supabase.auth.updateUser({ phone: normalizedPhone });
+            if (updateError) {
+              // eslint-disable-next-line no-console
+              console.warn('auth.updateUser phone failed:', updateError);
+            }
+          } catch (updateErr) {
+            // eslint-disable-next-line no-console
+            console.warn('auth.updateUser threw:', updateErr);
+          }
+        }
+
         // Optionally navigate to home after sign up
         // router.push('/(tabs)/home');
       }
@@ -104,6 +155,30 @@ export default function LoginScreen() {
       />
 
       <View style={styles.form}>
+
+      {isSignUp && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Display Name"
+            placeholderTextColor="rgba(17,24,28,0.45)"
+            value={displayName}
+            onChangeText={setDisplayName}
+            autoCapitalize="words"
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Phone (e.g. +1234567890)"
+            placeholderTextColor="rgba(17,24,28,0.45)"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+          />
+        </>
+      )}
+
 
       <TextInput
         style={styles.input}
