@@ -46,26 +46,42 @@ export default function AddInventoryItemScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const detectedItem = params.detectedItem ? JSON.parse(params.detectedItem as string) : null;
+  // new: support full aggregated map from Camera under `detectedItems` param
+  const detectedItemsMap: Record<string, number> | null = params.detectedItems ? JSON.parse(params.detectedItems as string) : null;
   const { addInventoryItem } = useInventory();
   const [loading, setLoading] = useState(false);
 
   // Support multiple rows similar to take-order
   // Initialize rows: if camera provided a detectedItem, prefill a single row with its data
-  const initialRow = (() => {
+  const initialRow = { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' };
+
+  // If camera provided a full detected items map, initialize rows from it
+  const initialRowsFromMap = (() => {
+    if (detectedItemsMap && Object.keys(detectedItemsMap).length > 0) {
+      return Object.entries(detectedItemsMap).map(([label, count]) => {
+        const name = String(label || '').toUpperCase();
+        const countVal = String(count || 1);
+        const shelfLife = '7';
+        const predictedExpiry = null;
+        const iconKey = nameToIconMap[name] || 'burger';
+        return { id: `row-${name}-${Date.now()}`, name, count: countVal, shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' };
+      });
+    }
+
+    // fallback: if single detectedItem exists, use that
     if (detectedItem && detectedItem.name) {
       const name = (detectedItem.name || '').toString().toUpperCase();
       const countVal = detectedItem.count !== undefined ? String(detectedItem.count) : '1';
       const shelfLife = detectedItem.predictedHours ? Math.ceil(detectedItem.predictedHours / 24).toString() : '7';
       const predictedExpiry = detectedItem.predictedHours ? new Date(Date.now() + detectedItem.predictedHours * 3600 * 1000) : null;
       const iconKey = nameToIconMap[name] || 'burger';
-      return { id: `row-${Date.now()}`, name, count: countVal, shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' };
+      return [{ id: `row-${Date.now()}`, name, count: countVal, shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' }];
     }
-    return { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' };
+
+    return [initialRow];
   })();
 
-  const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>([
-    initialRow,
-  ]);
+  const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>(initialRowsFromMap);
 
   // track last requested per-row to avoid race conditions
   const lastRequestedRef = useRef<Record<string, string | null>>({});
