@@ -34,6 +34,7 @@ export default {
     },
     plugins: [
       'expo-router',
+      "expo-secure-store",
     ],
     experiments: {
       typedRoutes: true,
@@ -47,6 +48,7 @@ export default {
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
       weatherCity: process.env.EXPO_PUBLIC_WEATHER_CITY,
       weatherApiKey: process.env.EXPO_PUBLIC_WEATHER_API_KEY,
+      
     },
   },
 };

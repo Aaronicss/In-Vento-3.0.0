@@ -1,5 +1,7 @@
 import { Colors } from '@/constants/theme';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Easing, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
@@ -19,6 +21,35 @@ export default function LoginScreen() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // try biometric unlock if a refresh token is stored
+    (async () => {
+      try {
+        const stored = await SecureStore.getItemAsync('sb_refresh_token');
+        if (stored) {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          if (hasHardware && isEnrolled) {
+            const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock to sign in' });
+            if (res.success) {
+              // try to restore session from refresh token
+              try {
+                // Type expects both tokens; cast to any since we only have the refresh token
+                await supabase.auth.setSession({ refresh_token: stored } as any);
+                router.push('/(tabs)/home');
+              } catch (err) {
+                // ignore and allow manual login
+                // eslint-disable-next-line no-console
+                console.warn('biometric restore failed', err);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('biometric check error', e);
+      }
+    })();
+
     const scaleSeq = Animated.sequence([
       Animated.timing(scaleAnim, { toValue: 1.05, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       Animated.timing(scaleAnim, { toValue: 0.98, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -52,6 +83,32 @@ export default function LoginScreen() {
 
       if (data.user) {
         Alert.alert('Login Successful', 'Welcome to In-Vento!');
+        // Offer biometric storage of refresh token for faster unlock
+        try {
+          const refresh = data.session?.refresh_token;
+          if (refresh) {
+            const hasHardware = await LocalAuthentication.hasHardwareAsync();
+            const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+            if (hasHardware && isEnrolled) {
+              Alert.alert('Enable Biometric Login', 'Would you like to enable fingerprint/biometric unlock for faster login?', [
+                { text: 'No' },
+                { text: 'Yes', onPress: async () => {
+                  try {
+                    await SecureStore.setItemAsync('sb_refresh_token', refresh);
+                    // eslint-disable-next-line no-console
+                    console.log('Refresh token saved for biometric unlock');
+                  } catch (err) {
+                    // eslint-disable-next-line no-console
+                    console.warn('Failed to save refresh token', err);
+                  }
+                }},
+              ]);
+            }
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('biometric setup error', e);
+        }
         router.push('/(tabs)/home'); // navigate to the tabs-based home screen
       }
     } catch (error: any) {

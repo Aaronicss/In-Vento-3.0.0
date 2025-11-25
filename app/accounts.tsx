@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
@@ -169,9 +170,11 @@ export default function AccountsScreen() {
             try {
               setLoading(true);
               const { error } = await supabase.auth.signOut();
-              if (error) throw error;
-              // navigate to login
-              router.replace('/login');
+                if (error) throw error;
+                // clear any locally stored biometric refresh token
+                try { await SecureStore.deleteItemAsync('sb_refresh_token'); } catch (e) { /* ignore */ }
+                // navigate to login
+                router.replace('/login');
             } catch (err: any) {
               console.warn('signOut error', err);
               Alert.alert('Sign out failed', err?.message || String(err));
