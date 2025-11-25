@@ -58,8 +58,26 @@ export default function AddInventoryItemScreen() {
   // If camera provided a full detected items map, initialize rows from it
   const initialRowsFromMap = (() => {
     if (detectedItemsMap && Object.keys(detectedItemsMap).length > 0) {
+      // Build a map of normalized picker values so we can map detection labels to actual picker options
+      const pickerOptions = [
+        'BURGER BUN', 'BEEF', 'LETTUCE', 'PICKLES', 'CHEESE', 'TOMATO', 'ONION',
+      ];
+      const normalize = (s: string) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const normalizedToPicker: Record<string, string> = {};
+      pickerOptions.forEach(p => { normalizedToPicker[normalize(p)] = p; });
+
       return Object.entries(detectedItemsMap).map(([label, count]) => {
-        const name = String(label || '').toUpperCase();
+        const raw = String(label || '');
+        const norm = normalize(raw);
+        // prefer exact picker match, otherwise try mapping via icon map keys
+        let matchedName = normalizedToPicker[norm] ?? null;
+        if (!matchedName) {
+          // try matching against nameToIconMap keys (they are uppercased)
+          const byIconKey = Object.keys(nameToIconMap).find(k => normalize(k) === norm);
+          if (byIconKey) matchedName = byIconKey;
+        }
+        // fallback to the raw uppercase label (user can change it)
+        const name = (matchedName ?? String(label || '').toUpperCase());
         const countVal = String(count || 1);
         const shelfLife = '7';
         const predictedExpiry = null;
@@ -70,7 +88,16 @@ export default function AddInventoryItemScreen() {
 
     // fallback: if single detectedItem exists, use that
     if (detectedItem && detectedItem.name) {
-      const name = (detectedItem.name || '').toString().toUpperCase();
+      // try to match single detectedItem name to picker values
+      const pickerOptions = [
+        'BURGER BUN', 'BEEF', 'LETTUCE', 'PICKLES', 'CHEESE', 'TOMATO', 'ONION',
+      ];
+      const normalize = (s: string) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const norm = normalize(detectedItem.name);
+      const normalizedToPicker: Record<string, string> = {};
+      pickerOptions.forEach(p => { normalizedToPicker[normalize(p)] = p; });
+      const matched = normalizedToPicker[norm] ?? (Object.keys(nameToIconMap).find(k => normalize(k) === norm) ?? null);
+      const name = matched ?? (detectedItem.name || '').toString().toUpperCase();
       const countVal = detectedItem.count !== undefined ? String(detectedItem.count) : '1';
       const shelfLife = detectedItem.predictedHours ? Math.ceil(detectedItem.predictedHours / 24).toString() : '7';
       const predictedExpiry = detectedItem.predictedHours ? new Date(Date.now() + detectedItem.predictedHours * 3600 * 1000) : null;

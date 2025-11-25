@@ -2,7 +2,7 @@ import { Colors } from '@/constants/theme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 🔥 Roboflow API URL (Detection or Classification)
 const MODEL_NAME = "in-vento-xuxyq"; // example: "food-items"
@@ -22,6 +22,25 @@ export default function CameraScreen() {
   const CAPTURE_INTERVAL = 8; // seconds
   const [countdown, setCountdown] = useState<number>(CAPTURE_INTERVAL);
   const countdownTimer = useRef<number | null>(null);
+  // draggable overlay pan
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 }));
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        try {
+          (pan.current as any).setOffset({ x: (pan.current as any).x._value || 0, y: (pan.current as any).y._value || 0 });
+        } catch (e) {
+          // ignore if internals not available
+        }
+        (pan.current as any).setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: (pan.current as any).x, dy: (pan.current as any).y }], { useNativeDriver: false }),
+      onPanResponderRelease: () => {
+        try { (pan.current as any).flattenOffset(); } catch (e) { /* ignore */ }
+      },
+    })
+  ).current;
 
   // define takePicture with useCallback so hooks order stays stable
   const takePicture = useCallback(async (opts?: { navigate?: boolean }) => {
@@ -155,6 +174,7 @@ export default function CameraScreen() {
       clearInterval(countdownTimer.current as any);
       countdownTimer.current = null;
     }
+    // stop animated progress (none now)
 
     const detectedItemsPayload = summaryCounts;
 
@@ -181,6 +201,7 @@ export default function CameraScreen() {
             // trigger capture and reset countdown
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             takePicture({ navigate: false });
+            // restart animated progress by resetting to 1 below via setCountdown
             return CAPTURE_INTERVAL;
           }
           return prev - 1;
@@ -195,6 +216,8 @@ export default function CameraScreen() {
       }
     };
   }, [permission?.granted, takePicture, autoCaptureActive]);
+
+  // (removed top-left animated progress — countdown remains shown in bottom hint)
 
   if (!permission) return <View style={styles.container} />;
   if (!permission.granted) {
@@ -221,37 +244,52 @@ export default function CameraScreen() {
       <CameraView ref={cameraRef} style={styles.camera} />
 
       {Object.keys(summaryCounts).length > 0 && (
-        <View style={styles.summaryOverlay}>
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[styles.summaryOverlay, { transform: pan.current.getTranslateTransform() }]}
+        >
           {Object.entries(summaryCounts).map(([label, count]) => (
-            <Text key={label} style={styles.summaryText}>{label}: {count}</Text>
+            <View key={label} style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{label}</Text>
+              <Text style={styles.summaryCount}>{count}</Text>
+            </View>
           ))}
-        </View>
+        </Animated.View>
       )}
 
-      <View style={styles.captureContainer}>
-        <TouchableOpacity
-          style={[styles.captureButton, loading && { opacity: 0.6 }]}
-          onPress={() => takePicture({ navigate: true })}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" size="large" />
-          ) : (
-            <View style={styles.captureButtonInner} />
-          )}
-        </TouchableOpacity>
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.resetButton} onPress={handleReset} disabled={loading}>
-            <Text style={styles.resetButtonText}>Reset</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.doneButton} onPress={handleDone} disabled={loading}>
-            <Text style={styles.doneButtonText}>Done</Text>
-          </TouchableOpacity>
-        </View>
+      {/* countdown is shown in the bottom hint; removed top-left animated progress */}
 
-        <Text style={styles.captureHint}>
-            {loading ? "🔍 Analyzing..." : autoCaptureActive ? `Next capture: ${countdown}s` : "📷 Tap to Capture"}
-        </Text>
+      <View style={styles.captureContainer}>
+        <View style={styles.bottomPanel}>
+          <TouchableOpacity
+            style={[styles.captureButton, loading && { opacity: 0.6 }]}
+            onPress={() => takePicture({ navigate: true })}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="large" />
+            ) : (
+              <View style={styles.captureButtonInner} />
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.controlsRight}>
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.resetButton} onPress={handleReset} disabled={loading}>
+                <Text style={styles.resetButtonText}>Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.doneButton} onPress={handleDone} disabled={loading}>
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.captureHintWrapper}>
+              <Text style={styles.captureHintText}>
+                {loading ? '🔍 Analyzing...' : autoCaptureActive ? `Next: ${countdown}s` : '📷 Tap to Capture'}
+              </Text>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -352,21 +390,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   permissionButtonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  summaryOverlay: {
-    position: 'absolute',
-    top: 140,
-    right: 24,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  summaryText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 12,
-    marginBottom: 4,
-  },
+  
   actionRow: {
     flexDirection: 'row',
     marginTop: 12,
@@ -396,4 +420,59 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '800',
   },
+  bottomPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignSelf: 'center',
+    gap: 12,
+  },
+  controlsRight: {
+    marginLeft: 12,
+    alignItems: 'flex-start',
+  },
+  captureHintWrapper: {
+    marginTop: 6,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  captureHintText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  // draggable overlay styles
+  summaryOverlay: {
+    position: 'absolute',
+    top: 80,
+    right: 24,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    zIndex: 50,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  summaryLabel: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+    marginRight: 8,
+  },
+  summaryCount: {
+    color: Colors.light.tint,
+    fontWeight: '900',
+    fontSize: 18,
+  },
+  // progress circle removed
 });
