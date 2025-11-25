@@ -108,7 +108,7 @@ export default function CameraScreen() {
         : null;
 
       router.push({
-        pathname: '/detection-results',
+        pathname: '/add-inventory-item',
         params: { detectedItem: detectedParam ? JSON.stringify(detectedParam) : undefined },
       });
 

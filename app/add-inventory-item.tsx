@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/theme';
 import { Picker } from '@react-native-picker/picker';
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useInventory } from '../contexts/InventoryContext';
@@ -44,12 +44,27 @@ const formatDateTime = (d: Date) => {
 
 export default function AddInventoryItemScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const detectedItem = params.detectedItem ? JSON.parse(params.detectedItem as string) : null;
   const { addInventoryItem } = useInventory();
   const [loading, setLoading] = useState(false);
 
   // Support multiple rows similar to take-order
+  // Initialize rows: if camera provided a detectedItem, prefill a single row with its data
+  const initialRow = (() => {
+    if (detectedItem && detectedItem.name) {
+      const name = (detectedItem.name || '').toString().toUpperCase();
+      const countVal = detectedItem.count !== undefined ? String(detectedItem.count) : '1';
+      const shelfLife = detectedItem.predictedHours ? Math.ceil(detectedItem.predictedHours / 24).toString() : '7';
+      const predictedExpiry = detectedItem.predictedHours ? new Date(Date.now() + detectedItem.predictedHours * 3600 * 1000) : null;
+      const iconKey = nameToIconMap[name] || 'burger';
+      return { id: `row-${Date.now()}`, name, count: countVal, shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' };
+    }
+    return { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' };
+  })();
+
   const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>([
-    { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' },
+    initialRow,
   ]);
 
   // track last requested per-row to avoid race conditions

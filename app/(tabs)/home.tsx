@@ -57,6 +57,10 @@ export default function TileHome() {
       <Text style={styles.title}>IN-VENTO</Text>
       <Text style={styles.subtitle}>Quick Navigation</Text>
 
+      <TouchableOpacity style={styles.scanButton} onPress={() => router.push('/camera')}> 
+        <Text style={styles.scanButtonText}>Scan Inventory</Text>
+      </TouchableOpacity>
+
       {/* compute alerts count for badge */}
       {/** derive alerts using same rule as alerts page */}
       {/** this is a noop render block used to compute alertsCount in component scope */}
@@ -192,4 +196,23 @@ const styles = StyleSheet.create({
   ,
   tileLeft: { flexDirection: 'row', alignItems: 'center' },
   tileTextWrap: { marginLeft: 12 },
+  scanButton: {
+    marginTop: 12,
+    width: '100%',
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scanButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+  },
 });
