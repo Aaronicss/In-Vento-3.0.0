@@ -3,7 +3,8 @@ import 'dotenv/config';
 export default {
   expo: {
     name: 'In-Vento App',
-    slug: 'my-new-project',
+    slug: 'in-vento',
+    owner: "eyyyronnn",
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
@@ -27,6 +28,12 @@ export default {
       predictiveBackGestureEnabled: false,
       package: 'com.aaronics.invento',
     },
+    updates: {
+      url: "https://u.expo.dev/7ad98b8f-53ca-45c3-8d21-cc12ce021f9d"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
+    },
     web: {
       bundler: 'metro',
       output: 'static',
@@ -42,7 +49,7 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: '90e325ff-a878-4c2a-8e49-d320084e3f8d',
+        projectId: '7ad98b8f-53ca-45c3-8d21-cc12ce021f9d',
       },
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
@@ -50,5 +57,7 @@ export default {
       weatherApiKey: process.env.EXPO_PUBLIC_WEATHER_API_KEY,
       
     },
+    
   },
+  
 };
