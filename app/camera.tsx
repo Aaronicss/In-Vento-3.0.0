@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/theme';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 🔥 Roboflow API URL (Detection or Classification)
@@ -16,74 +16,66 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const autoCaptureTimer = useRef<number | null>(null);
+  const autoCaptured = useRef(false);
 
-  if (!permission) return <View style={styles.container} />;
-  if (!permission.granted) {
-    return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.title}>Allow Camera Access</Text>
-        <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // define takePicture with useCallback so hooks order stays stable
+  const takePicture = useCallback(async () => {
+    if (!cameraRef.current) return;
 
-  // 📸 Capture image & send to Roboflow
-  const takePicture = async () => {
-  if (!cameraRef.current) return;
+    setLoading(true);
 
-  setLoading(true);
-
-  try {
-    // 1️⃣ Capture image
-    const photo = await cameraRef.current.takePictureAsync({
-      quality: 0.8,
-      base64: false,
-    });
-
-    if (!photo?.uri) throw new Error('Failed to capture image');
-
-    // 2️⃣ Prepare form data for Roboflow
-    const formData = new FormData();
-    formData.append('file', {
-      uri: photo.uri,
-      type: 'image/jpeg',
-      name: 'photo.jpg',
-    } as any);
-
-    // 3️⃣ Call Roboflow
-    const response = await fetch(ROBOFLOW_URL, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) throw new Error(`Roboflow API Error: ${response.statusText}`);
-
-    const result = await response.json();
-
-    // 4️⃣ Process predictions safely
-    const summary: { [label: string]: number } = {};
-
-    if (Array.isArray(result.predictions)) {
-      result.predictions.forEach((pred: any) => {
-        const label = pred.class;
-        if (label) summary[label] = (summary[label] || 0) + 1;
+    try {
+      // 1️⃣ Capture image
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        base64: false,
       });
-    }
 
-    // 5️⃣ Show summary
-    if (Object.keys(summary).length > 0) {
-      const summaryText = Object.entries(summary)
-        .map(([label, count]) => `${label}: ${count}`)
-        .join('\n');
-      Alert.alert('Detected Items', summaryText);
-    } else {
-      Alert.alert('No detections found');
-    }
+      if (!photo?.uri) throw new Error('Failed to capture image');
 
+      // 2️⃣ Prepare form data for Roboflow
+      const formData = new FormData();
+      formData.append('file', {
+        uri: photo.uri,
+        type: 'image/jpeg',
+        name: 'photo.jpg',
+      } as any);
 
-    // 7️⃣ Navigate to results screen if desired
+      // 3️⃣ Call Roboflow
+      const response = await fetch(ROBOFLOW_URL, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error(`Roboflow API Error: ${response.statusText}`);
+
+      const result = await response.json();
+
+      // 4️⃣ Process predictions safely
+      const summary: { [label: string]: number } = {};
+
+      if (Array.isArray(result.predictions)) {
+        result.predictions.forEach((pred: any) => {
+          const label = pred.class;
+          if (label) summary[label] = (summary[label] || 0) + 1;
+        });
+      }
+
+      // 5️⃣ Show summary (log only)
+      if (Object.keys(summary).length > 0) {
+        const summaryText = Object.entries(summary)
+          .map(([label, count]) => `${label}: ${count}`)
+          .join('\n');
+        // no alert popup after capture; log summary instead
+        // eslint-disable-next-line no-console
+        console.log('Detected Items:', summaryText);
+      } else {
+        // no pop-up when no detections; log for debugging
+        // eslint-disable-next-line no-console
+        console.log('No detections found');
+      }
+
       // Compute top prediction (highest confidence) and include it in params
       let topPred: any = null;
       if (Array.isArray(result.predictions) && result.predictions.length > 0) {
@@ -112,13 +104,49 @@ export default function CameraScreen() {
         params: { detectedItem: detectedParam ? JSON.stringify(detectedParam) : undefined },
       });
 
-  } catch (error: any) {
-    console.error('Error processing image:', error);
-    Alert.alert('Error', error.message || 'Failed to process image. Please try again.');
-  } finally {
-    setLoading(false);
+    } catch (error: any) {
+      console.error('Error processing image:', error);
+      Alert.alert('Error', error.message || 'Failed to process image. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [cameraRef, router]);
+  // Auto-capture after 4 seconds when permission is granted and camera is ready
+  useEffect(() => {
+    if (permission && permission.granted && !autoCaptured.current) {
+      // clear any existing timer
+      if (autoCaptureTimer.current) {
+        clearTimeout(autoCaptureTimer.current);
+      }
+      // start 4s timer
+      autoCaptureTimer.current = setTimeout(() => {
+        autoCaptured.current = true;
+        takePicture();
+      }, 4000) as any as number;
+    }
+
+    return () => {
+      if (autoCaptureTimer.current) {
+        clearTimeout(autoCaptureTimer.current);
+        autoCaptureTimer.current = null;
+      }
+    };
+    // Only run when permission.granted changes
+  }, [permission?.granted, takePicture]);
+
+  if (!permission) return <View style={styles.container} />;
+  if (!permission.granted) {
+    return (
+      <View style={styles.permissionContainer}>
+        <Text style={styles.title}>Allow Camera Access</Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
+          <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
-};
+
+  
 
 
   return (
