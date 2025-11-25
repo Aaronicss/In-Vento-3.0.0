@@ -171,8 +171,11 @@ export default function AccountsScreen() {
               setLoading(true);
               const { error } = await supabase.auth.signOut();
                 if (error) throw error;
-                // clear any locally stored biometric refresh token
-                try { await SecureStore.deleteItemAsync('sb_refresh_token'); } catch (e) { /* ignore */ }
+                // clear any locally stored biometric tokens
+                try {
+                  await SecureStore.deleteItemAsync('sb_refresh_token');
+                  await SecureStore.deleteItemAsync('sb_access_token');
+                } catch (e) { /* ignore */ }
                 // navigate to login
                 router.replace('/login');
             } catch (err: any) {

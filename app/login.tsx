@@ -24,17 +24,23 @@ export default function LoginScreen() {
     // try biometric unlock if a refresh token is stored
     (async () => {
       try {
-        const stored = await SecureStore.getItemAsync('sb_refresh_token');
-        if (stored) {
+        const storedAccess = await SecureStore.getItemAsync('sb_access_token');
+        const storedRefresh = await SecureStore.getItemAsync('sb_refresh_token');
+        const tokenToUse = (storedAccess && storedRefresh) ? { access: storedAccess, refresh: storedRefresh } : (storedRefresh ? { access: null, refresh: storedRefresh } : null);
+        if (tokenToUse) {
           const hasHardware = await LocalAuthentication.hasHardwareAsync();
           const isEnrolled = await LocalAuthentication.isEnrolledAsync();
           if (hasHardware && isEnrolled) {
             const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock to sign in' });
             if (res.success) {
-              // try to restore session from refresh token
+              // try to restore session using stored tokens
               try {
-                // Type expects both tokens; cast to any since we only have the refresh token
-                await supabase.auth.setSession({ refresh_token: stored } as any);
+                if (tokenToUse.access && tokenToUse.refresh) {
+                  await supabase.auth.setSession({ access_token: tokenToUse.access, refresh_token: tokenToUse.refresh } as any);
+                } else if (tokenToUse.refresh) {
+                  // fallback: still try with refresh only
+                  await supabase.auth.setSession({ refresh_token: tokenToUse.refresh } as any);
+                }
                 router.push('/(tabs)/home');
               } catch (err) {
                 // ignore and allow manual login
