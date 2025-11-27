@@ -17,11 +17,11 @@ export default function TakeOrderScreen() {
   // Recipe definitions (ingredient names should match inventory `name` values)
   const RECIPES: { [key: string]: Array<{ ingredient: string; qty: number }> } = {
     'Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
-    'Classic Hamburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
-    'Deluxe Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
-    'Garden Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Classic Hamburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 10 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 8 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Deluxe Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 10 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 8 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Garden Cheeseburger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'LETTUCE', qty: 10 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
     'Double Cheese Burger': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'CHEESE', qty: 2 }, { ingredient: 'BURGER BUN', qty: 1 }],
-    'Fully Loaded': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 1 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 1 }, { ingredient: 'BURGER BUN', qty: 1 }],
+    'Fully Loaded': [{ ingredient: 'BEEF', qty: 1 }, { ingredient: 'LETTUCE', qty: 10 }, { ingredient: 'CHEESE', qty: 1 }, { ingredient: 'TOMATO', qty: 1 }, { ingredient: 'ONION', qty: 1 }, { ingredient: 'PICKLES', qty: 8 }, { ingredient: 'BURGER BUN', qty: 1 }],
   };
 
   // Compute recipes that are currently available given inventory counts
@@ -37,6 +37,29 @@ export default function TakeOrderScreen() {
     });
     return available;
   }, [inventoryItems]);
+
+  // Preview state for recipe guide (shows ingredients and shortages before selecting an item)
+  const [previewRecipe, setPreviewRecipe] = useState<string | null>(null);
+  const [previewQty, setPreviewQty] = useState<number>(1);
+
+  const computeRecipeSummary = (rName: string, qty = 1) => {
+    const recipe = RECIPES[rName];
+    if (!recipe) return {} as Record<string, { needed: number; available: number; shortage: number }>;
+    const map: Record<string, { needed: number; available: number; shortage: number }> = {};
+    recipe.forEach((r) => {
+      const key = r.ingredient.toUpperCase();
+      map[key] = map[key] || { needed: 0, available: 0, shortage: 0 };
+      map[key].needed += r.qty * qty;
+    });
+    Object.keys(map).forEach((ing) => {
+      const totalAvailable = inventoryItems
+        .filter(i => i.name && i.name.toUpperCase() === ing)
+        .reduce((sum, row) => sum + (row.count || 0), 0);
+      map[ing].available = totalAvailable;
+      map[ing].shortage = Math.max(0, map[ing].needed - totalAvailable);
+    });
+    return map;
+  };
 
   // Ensure inventory is loaded when this screen mounts (some environments may not have fetched yet)
   useEffect(() => {
@@ -135,6 +158,34 @@ export default function TakeOrderScreen() {
     }
   };
 
+  // Compute aggregate ingredient totals for selected recipes and compare to inventory
+  const ingredientSummary = useMemo(() => {
+    const usage: Record<string, { needed: number; available: number; shortage: number }> = {};
+
+    // Aggregate needed quantities from selected items
+    items.forEach((it) => {
+      if (!it.name || it.quantity <= 0) return;
+      const recipe = RECIPES[it.name as string];
+      if (!recipe) return;
+      recipe.forEach((r) => {
+        const key = r.ingredient.toUpperCase();
+        usage[key] = usage[key] || { needed: 0, available: 0, shortage: 0 };
+        usage[key].needed += r.qty * it.quantity;
+      });
+    });
+
+    // Fill available counts from inventory and compute shortage
+    Object.keys(usage).forEach((ing) => {
+      const totalAvailable = inventoryItems
+        .filter(i => i.name && i.name.toUpperCase() === ing)
+        .reduce((sum, row) => sum + (row.count || 0), 0);
+      usage[ing].available = totalAvailable;
+      usage[ing].shortage = Math.max(0, usage[ing].needed - totalAvailable);
+    });
+
+    return usage;
+  }, [items, inventoryItems]);
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -147,12 +198,78 @@ export default function TakeOrderScreen() {
         <Text style={styles.label}>Customer Number</Text>
         <TextInput
           style={[styles.input, { opacity: 0.9 }]}
-          value={String(nextCustomerNumber)}
+          value={String(nextCustomerNumber).padStart(3, '0')}
           editable={false}
         />
       </View>
 
       {/* Items Section */}
+      {/* Recipe Guide: preview recipes and missing ingredients before selecting items */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.label}>Recipe Guide</Text>
+        </View>
+        <View style={{ marginBottom: 8 }}>
+          {Object.keys(RECIPES).map((r) => {
+            const summary = computeRecipeSummary(r, 1);
+            const totalShortage = Object.values(summary).reduce((s, v) => s + (v.shortage || 0), 0);
+            return (
+              <TouchableOpacity
+                key={r}
+                style={styles.recipeRow}
+                onPress={() => {
+                  setPreviewRecipe(r === previewRecipe ? null : r);
+                  setPreviewQty(1);
+                }}
+              >
+                <Text style={styles.recipeName}>{r}</Text>
+                <View style={styles.recipeBadgeContainer}>
+                  {totalShortage > 0 ? (
+                    <Text style={styles.recipeBadgeMissing}>Missing {totalShortage}</Text>
+                  ) : (
+                    <Text style={styles.recipeBadgeOk}>OK</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {previewRecipe && (
+          <View style={styles.summaryTile}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={styles.summaryTitle}>{previewRecipe} — Ingredients (per unit)</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setPreviewQty(Math.max(1, previewQty - 1))}
+                  style={styles.qtySmallBtn}
+                >
+                  <Text style={{ color: '#fff' }}>-</Text>
+                </TouchableOpacity>
+                <Text style={{ fontWeight: '700' }}>{previewQty}</Text>
+                <TouchableOpacity
+                  onPress={() => setPreviewQty(previewQty + 1)}
+                  style={styles.qtySmallBtn}
+                >
+                  <Text style={{ color: '#fff' }}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {Object.keys(computeRecipeSummary(previewRecipe, previewQty)).map((ing) => {
+              const s = computeRecipeSummary(previewRecipe, previewQty)[ing];
+              return (
+                <View key={ing} style={styles.summaryRow}>
+                  <Text style={styles.summaryIngredient}>{ing}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.summaryAmount}>{s.available}</Text>
+                    <Text style={{ color: 'rgba(0,0,0,0.45)'}}> / {s.needed}</Text>
+                    {s.shortage > 0 && <Text style={styles.summaryMissing}>Missing {s.shortage}</Text>}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.label}>Order Items</Text>
@@ -212,6 +329,25 @@ export default function TakeOrderScreen() {
       </View>
 
       {/* Confirm Button */}
+      {/* Ingredients Summary Tile (shows needed vs available and marks missing items) */}
+      {Object.keys(ingredientSummary).length > 0 && (
+        <View style={styles.summaryTile}>
+          <Text style={styles.summaryTitle}>Ingredients Needed</Text>
+          {Object.keys(ingredientSummary).map((ing) => {
+            const s = ingredientSummary[ing];
+            return (
+              <View key={ing} style={styles.summaryRow}>
+                <Text style={styles.summaryIngredient}>{ing}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.summaryAmount}>{s.available}</Text>
+                    <Text style={{ color: 'rgba(0,0,0,0.45)'}}> / {s.needed}</Text>
+                  {s.shortage > 0 && <Text style={styles.summaryMissing}>Missing {s.shortage}</Text>}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
       <TouchableOpacity 
         style={[styles.confirmButton, loading && styles.buttonDisabled]} 
         onPress={handleConfirm}
@@ -397,6 +533,88 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  summaryTile: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.light.tint,
+    marginBottom: 8,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.03)'
+  },
+  summaryIngredient: {
+    fontSize: 14,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  summaryAmount: {
+    fontSize: 14,
+    color: 'rgba(17,24,28,0.8)',
+    fontWeight: '700',
+  },
+  summaryMissing: {
+    marginLeft: 8,
+    color: '#d63333',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  recipeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    marginBottom: 8,
+  },
+  recipeName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  recipeBadgeContainer: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  recipeBadgeMissing: {
+    backgroundColor: '#fff2f2',
+    color: '#d63333',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    fontWeight: '700',
+  },
+  recipeBadgeOk: {
+    backgroundColor: '#ecfdf5',
+    color: '#0f5132',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    fontWeight: '700',
+  },
+  qtySmallBtn: {
+    backgroundColor: Colors.light.tint,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelButton: {
     paddingVertical: 14,

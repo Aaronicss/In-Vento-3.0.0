@@ -31,36 +31,36 @@ async function writeLocalThreshold(value: number): Promise<void> {
  */
 export async function getLowStockThreshold(): Promise<number> {
   try {
-    // Try to read from Supabase user metadata
-    const { data, error } = await supabase.auth.getUser();
-    if (error) {
-      console.warn('preferencesService: supabase.getUser error', error);
-    }
+    // Try to read from dedicated user_preferences table
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr) console.warn('preferencesService: supabase.getUser error', userErr);
+    const user = userData?.user;
 
-    const user = data?.user;
-    if (user) {
-      const meta: any = (user.user_metadata as any) || {};
-      // support both flat key and nested preferences object
-      const remoteVal = meta.low_stock_threshold ?? (meta.preferences && meta.preferences.low_stock_threshold);
-      if (remoteVal !== undefined && remoteVal !== null) {
-        const n = Number(remoteVal);
+    if (user && user.id) {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('low_stock_threshold')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!error && data && (data as any).low_stock_threshold !== undefined) {
+        const n = Number((data as any).low_stock_threshold);
         if (!isNaN(n)) return n;
       }
 
-      // remote not set — try local and migrate
+      // if no row found, try to migrate local value into the table
       const local = await readLocalThreshold();
       if (local !== null) {
-        // attempt to persist to Supabase
         try {
-          await supabase.auth.updateUser({ data: { ...(meta.preferences || {}), low_stock_threshold: local } });
+          await supabase.from('user_preferences').upsert({ user_id: user.id, low_stock_threshold: local });
         } catch (e) {
-          console.warn('preferencesService: failed to migrate local threshold to supabase', e);
+          console.warn('preferencesService: failed to migrate local threshold to user_preferences table', e);
         }
         return local;
       }
     }
 
-    // fallback to local
+    // fallback to local storage or default
     const local = await readLocalThreshold();
     if (local !== null) return local;
     return DEFAULT_THRESHOLD;
@@ -78,8 +78,7 @@ export async function setLowStockThreshold(value: number): Promise<void> {
   try {
     // write local copy
     await writeLocalThreshold(value);
-
-    // try to write to Supabase user metadata
+    // try to write to dedicated user_preferences table
     try {
       const { data, error } = await supabase.auth.getUser();
       if (error) {
@@ -89,11 +88,9 @@ export async function setLowStockThreshold(value: number): Promise<void> {
       const user = data?.user;
       if (!user) return;
 
-      const meta: any = (user.user_metadata as any) || {};
-      const newPrefs = { ...(meta.preferences || {}), low_stock_threshold: value };
-      await supabase.auth.updateUser({ data: { preferences: newPrefs } });
+      await supabase.from('user_preferences').upsert({ user_id: user.id, low_stock_threshold: value });
     } catch (e) {
-      console.warn('preferencesService: failed to persist threshold to supabase', e);
+      console.warn('preferencesService: failed to persist threshold to user_preferences table', e);
     }
   } catch (e) {
     console.warn('preferencesService.setLowStockThreshold error', e);

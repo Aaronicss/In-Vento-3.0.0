@@ -1,9 +1,10 @@
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
+import { DEFAULT_THRESHOLD, getLowStockThreshold } from '@/services/preferencesService';
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ProgressBar } from "react-native-paper";
 import { getIconSource, useInventory } from "../../contexts/InventoryContext";
 
@@ -180,6 +181,34 @@ export default function InventoryScreen() {
         return 'rgba(0,0,0,0.06)';
     }
   };
+  const [lowStockThreshold, setLowStockThreshold] = useState<number>(DEFAULT_THRESHOLD);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const t = await getLowStockThreshold();
+        if (mounted && typeof t === 'number') setLowStockThreshold(t);
+      } catch (e) {
+        // ignore, keep default
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const getStockLevelColor = (count?: number) => {
+    const c = Number(count || 0);
+    if (c <= 0) return '#F44336'; // red
+    if (c <= (lowStockThreshold ?? DEFAULT_THRESHOLD)) return '#FF9800'; // orange
+    return '#10B981'; // green
+  };
+
+  const getStockLevelLabel = (count?: number) => {
+    const c = Number(count || 0);
+    if (c <= 0) return 'Out';
+    if (c <= (lowStockThreshold ?? DEFAULT_THRESHOLD)) return 'Low';
+    return 'In Stock';
+  };
 
   const InventoryCard = ({ item, batchNo }: { item: any; batchNo: number }) => {
     return (
@@ -204,9 +233,20 @@ export default function InventoryScreen() {
 
             <Text style={styles.cardQty}>{`${item.count} ${item.unit ?? 'pcs'}`}</Text>
 
-            <Text style={styles.cardDeliveredLabel}>Delivered on:</Text>
-            <Text style={styles.cardEstimate}>{formatDateShort(item.createdAt)}</Text>
-            <Text style={[styles.cardEstimate, { marginTop: 6 }]}>Est: {item.displayTimeRemaining}</Text>
+            <View style={styles.compactRow}>
+              <TouchableOpacity
+                onPress={() => Alert.alert('Stock level', `This item is classified as "${getStockLevelLabel(item.count)}" when count ≤ ${lowStockThreshold}.`)}
+                style={[styles.stockPill, { backgroundColor: getStockLevelColor(item.count) }]}
+              >
+                <Text style={styles.stockPillText}>{getStockLevelLabel(item.count)}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.deliveredInfo}>
+                <Text style={styles.cardDeliveredLabel}>Delivered on:</Text>
+                <Text style={styles.cardEstimate}>{formatDateShort(item.createdAt)}</Text>
+                <Text style={styles.cardEstimate}>Est: {item.displayTimeRemaining}</Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -749,5 +789,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  stockPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stockPillText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  compactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  deliveredInfo: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
   },
 });
