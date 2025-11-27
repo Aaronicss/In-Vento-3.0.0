@@ -169,7 +169,7 @@ export default function InventoryScreen() {
 
             <ProgressBar progress={item.displayProgress} color={getFreshnessColor(item.displayStatus)} style={styles.cardProgress} />
 
-            <Text style={styles.cardQty}>{item.count}pcs</Text>
+            <Text style={styles.cardQty}>{`${item.count} ${item.unit ?? 'pcs'}`}</Text>
 
             <Text style={styles.cardDeliveredLabel}>Delivered on:</Text>
             <Text style={styles.cardEstimate}>Est: {item.displayTimeRemaining}</Text>

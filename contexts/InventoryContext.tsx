@@ -21,6 +21,7 @@ export interface InventoryItem {
   name: string;
   icon: string;
   storageLocation?: string;
+  unit?: string;
   count: number;
   progress: number;
   timeRemaining: string;
@@ -43,7 +44,7 @@ interface InventoryContextType {
   inventoryItems: InventoryItem[];
   loading: boolean;
   // shelfLifeDays is optional if expiresAt is provided
-  addInventoryItem: (name: string, icon: string, count: number, shelfLifeDays?: number, expiresAt?: Date, storageLocation?: string) => Promise<void>;
+  addInventoryItem: (name: string, icon: string, count: number, shelfLifeDays?: number, expiresAt?: Date, unit?: string, storageLocation?: string) => Promise<void>;
   updateInventoryItem: (itemId: string, updates: Partial<InventoryItem>) => Promise<void>;
   removeInventoryItem: (itemId: string) => Promise<void>;
   incrementCount: (itemId: string) => Promise<void>;
@@ -123,11 +124,17 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         const timeRemaining = calculateTimeRemaining(expiresAt);
         const status = getStatus(progress);
 
+        // Normalize unit: accept only known units, fallback to 'pcs' for safety
+        const knownUnits = ['pcs', 'g', 'slices'];
+        const rawUnit = (item.unit || '').toString();
+        const normalizedUnit = knownUnits.includes(rawUnit) ? rawUnit : 'pcs';
+
         return {
           id: item.id,
           name: item.name,
           icon: item.icon,
           storageLocation: item.storage_location,
+          unit: normalizedUnit,
           count: item.count,
           progress,
           timeRemaining,
@@ -158,7 +165,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // CRUD functions
-  const addInventoryItem = async (name: string, icon: string, count: number, shelfLifeDays?: number, expiresAt?: Date, storageLocation?: string) => {
+  const addInventoryItem = async (name: string, icon: string, count: number, shelfLifeDays?: number, expiresAt?: Date, unit?: string, storageLocation?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -177,6 +184,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         created_at: createdAt.toISOString(),
         expires_at: finalExpiresAt.toISOString(),
       };
+
+      // include unit if provided
+      if (unit) insertObj.unit = unit;
 
       // include storage location if provided in updates (backwards-compatible)
       // Note: callers may pass storageLocation via additional parameter in future patches
@@ -201,6 +211,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       if (updates.icon !== undefined) updateData.icon = updates.icon;
       if (updates.count !== undefined) updateData.count = updates.count;
       if ((updates as any).storageLocation !== undefined) updateData.storage_location = (updates as any).storageLocation;
+      if ((updates as any).unit !== undefined) updateData.unit = (updates as any).unit;
       if (updates.expiresAt !== undefined) updateData.expires_at = updates.expiresAt.toISOString();
       if (updates.createdAt !== undefined) updateData.created_at = updates.createdAt.toISOString();
 

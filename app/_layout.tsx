@@ -88,7 +88,7 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  headerSafeArea: { backgroundColor: '#000000', paddingBottom: 8 },
+  headerSafeArea: { backgroundColor: Colors.light.headerBg, paddingBottom: 8 },
   header: {
     height: 120,
     flexDirection: 'row',
@@ -96,10 +96,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: '#000000',
+    backgroundColor: Colors.light.headerBg,
   },
   headerTitle: {
-    color: '#ffffff',
+    color: Colors.light.headerText,
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: 1,
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profileLabel: {
-    color: '#ffffff',
+    color: Colors.light.headerText,
     fontSize: 14,
     marginTop: 4,
     fontWeight: '600',

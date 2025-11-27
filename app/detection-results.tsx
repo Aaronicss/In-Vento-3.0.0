@@ -194,7 +194,8 @@ export default function AddInventoryItemScreen() {
         iconKey.toLowerCase(),
         countNum,
         shelfLifeNum,
-        predictedExpiryDate || undefined
+        predictedExpiryDate || undefined,
+        'pcs' // default unit for camera-detected adds
       );
 
       Alert.alert('Item Added', `${itemName} added!`, [{ text: 'OK', onPress: () => router.push('/inventory')}]);

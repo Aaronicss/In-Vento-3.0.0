@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps, ViewStyle } from 'react-native';
 
@@ -27,7 +28,7 @@ export default function PrimaryButton({ children, loading = false, style, disabl
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#000000',
+    backgroundColor: Colors.light.primaryButtonBg,
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 36,
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    color: '#FFFFFF',
+    color: Colors.light.primaryButtonText,
     fontWeight: '800',
     letterSpacing: 0.6,
     fontSize: 14,

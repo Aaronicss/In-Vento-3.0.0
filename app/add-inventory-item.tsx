@@ -1,3 +1,4 @@
+import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import { Picker } from '@react-native-picker/picker';
 import Constants from 'expo-constants';
@@ -53,7 +54,7 @@ export default function AddInventoryItemScreen() {
 
   // Support multiple rows similar to take-order
   // Initialize rows: if camera provided a detectedItem, prefill a single row with its data
-  const initialRow = { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' };
+  const initialRow = { id: `row-${Date.now()}`, name: '', count: '1', unit: '', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' };
 
   // If camera provided a full detected items map, initialize rows from it
   const initialRowsFromMap = (() => {
@@ -82,7 +83,7 @@ export default function AddInventoryItemScreen() {
         const shelfLife = '7';
         const predictedExpiry = null;
         const iconKey = nameToIconMap[name] || 'burger';
-        return { id: `row-${name}-${Date.now()}`, name, count: countVal, shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' };
+        return { id: `row-${name}-${Date.now()}`, name, count: countVal, unit: '', shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' };
       });
     }
 
@@ -102,13 +103,13 @@ export default function AddInventoryItemScreen() {
       const shelfLife = detectedItem.predictedHours ? Math.ceil(detectedItem.predictedHours / 24).toString() : '7';
       const predictedExpiry = detectedItem.predictedHours ? new Date(Date.now() + detectedItem.predictedHours * 3600 * 1000) : null;
       const iconKey = nameToIconMap[name] || 'burger';
-      return [{ id: `row-${Date.now()}`, name, count: countVal, shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' }];
+      return [{ id: `row-${Date.now()}`, name, count: countVal, unit: '', shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' }];
     }
 
     return [initialRow];
   })();
 
-  const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>(initialRowsFromMap);
+  const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; unit?: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>(initialRowsFromMap);
 
   // track last requested per-row to avoid race conditions
   const lastRequestedRef = useRef<Record<string, string | null>>({});
@@ -130,7 +131,7 @@ export default function AddInventoryItemScreen() {
         const icon = r.iconKey.toLowerCase();
         const expiresAt = r.predictedExpiryDate || undefined;
 
-        await addInventoryItem(name, icon, countNum, shelfLifeNum, expiresAt, r.storageLocation);
+        await addInventoryItem(name, icon, countNum, shelfLifeNum, expiresAt, r.unit ?? 'pcs', r.storageLocation);
       }
 
       Alert.alert('Items Added', `${validRows.length} item(s) have been added to inventory!`, [
@@ -147,7 +148,7 @@ export default function AddInventoryItemScreen() {
   };
 
   const addRow = () => {
-    setRows(prev => [...prev, { id: `row-${Date.now()}`, name: '', count: '1', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' }]);
+    setRows(prev => [...prev, { id: `row-${Date.now()}`, name: '', count: '1', unit: '', shelfLifeDays: '7', iconKey: 'burger', predictedExpiryDate: null, fetchingPrediction: false, storageLocation: '' }]);
   };
 
   const removeRow = (id: string) => {
@@ -278,13 +279,25 @@ export default function AddInventoryItemScreen() {
                 </View>
 
                 <Text style={[styles.label, { marginTop: 8 }]}>Quantity</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter quantity"
-              value={r.count}
-              onChangeText={(v) => updateRow(r.id, { count: v })}
-              keyboardType="number-pad"
-            />
+            <View style={styles.quantityRow}>
+              <TextInput
+                style={[styles.input, styles.quantityInput]}
+                placeholder="Enter quantity"
+                value={r.count}
+                onChangeText={(v) => updateRow(r.id, { count: v })}
+                keyboardType="number-pad"
+              />
+              <View style={[styles.pickerWrapper, styles.unitPickerWrapper]}>
+                <Picker
+                  selectedValue={r.unit ?? 'pcs'}
+                  onValueChange={(value) => updateRow(r.id, { unit: value })}
+                >
+                  <Picker.Item label="pcs" value="pcs" />
+                  <Picker.Item label="g" value="g" />
+                  <Picker.Item label="slices" value="slices" />
+                </Picker>
+              </View>
+            </View>
           </View>
         ))}
 
@@ -293,9 +306,9 @@ export default function AddInventoryItemScreen() {
         </TouchableOpacity>
       </View>
       {/* Confirm Button */}
-      <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-        <Text style={styles.confirmButtonText}>CONFIRM ADD</Text>
-      </TouchableOpacity>
+      <PrimaryButton style={{ marginTop: 12 }} onPress={handleConfirm} loading={loading}>
+        CONFIRM ADD
+      </PrimaryButton>
 
       {/* Cancel Button */}
       <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
@@ -315,22 +328,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 30,
     marginBottom: 24,
-    backgroundColor: 'rgba(244, 162, 97, 0.12)',
+    backgroundColor: Colors.light.headerBg,
     paddingVertical: 20,
     paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.18)',
+    borderRadius: 0,
+    borderBottomWidth: 0,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.light.text,
+    color: Colors.light.headerText,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(17, 24, 28, 0.7)',
+    color: 'rgba(255,255,255,0.9)',
     marginTop: 4,
   },
   section: {
@@ -343,27 +355,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   input: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFFFF',
     padding: 14,
     borderRadius: 12,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.15)',
+    borderColor: Colors.light.tint,
     marginBottom: 12,
     color: Colors.light.text,
   },
   confirmButton: {
-    backgroundColor: Colors.light.tint,
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 12,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    // replaced by PrimaryButton usage
   },
   confirmButtonText: {
     color: '#FFFFFF',
@@ -382,21 +384,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   pickerWrapper: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.15)',
+    borderColor: Colors.light.tint,
     marginBottom: 12,
   },
   predictionCard: {
-    backgroundColor: 'rgba(244, 162, 97, 0.12)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     borderLeftWidth: 5,
     borderLeftColor: Colors.light.tint,
     borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.18)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   predictionLabel: {
     fontSize: 12,
@@ -417,20 +419,32 @@ const styles = StyleSheet.create({
     color: 'rgba(17, 24, 28, 0.8)',
     fontWeight: '500',
   },
+  quantityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  quantityInput: {
+    flex: 2,
+    marginRight: 8,
+  },
+  unitInput: {
+    flex: 1,
+  },
   itemCard: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: Colors.light.tint,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 5,
     borderLeftWidth: 3,
     borderLeftColor: Colors.light.tint,
     borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.18)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   itemHeader: {
     flexDirection: 'row',
@@ -469,5 +483,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  unitPickerWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
 });

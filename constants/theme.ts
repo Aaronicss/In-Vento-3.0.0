@@ -17,6 +17,11 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    // Header / global primary styles (home uses black/white scheme)
+    headerBg: '#000000',
+    headerText: '#FFFFFF',
+    primaryButtonBg: '#000000',
+    primaryButtonText: '#FFFFFF',
   },
   dark: {
     text: '#ECEDEE',
@@ -25,6 +30,10 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    headerBg: '#000000',
+    headerText: '#FFFFFF',
+    primaryButtonBg: '#000000',
+    primaryButtonText: '#FFFFFF',
   },
 };
 

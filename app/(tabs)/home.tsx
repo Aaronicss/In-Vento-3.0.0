@@ -341,8 +341,8 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFFFFF',
-    backgroundColor: '#000000',
+    color: Colors.light.headerText,
+    backgroundColor: Colors.light.headerBg,
     paddingVertical: 12,
     paddingHorizontal: 0,
     borderRadius: 0,
