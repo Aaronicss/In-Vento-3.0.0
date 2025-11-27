@@ -1,5 +1,5 @@
+import Dropdown from '@/components/Dropdown';
 import { Colors } from '@/constants/theme';
-import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -176,19 +176,15 @@ export default function TakeOrderScreen() {
             </View>
 
             <View style={[styles.input, { paddingHorizontal: 0, paddingVertical: 0 }]}> 
-              <Picker
-                selectedValue={item.name}
-                onValueChange={(value) => updateItem(item.id, 'name', value)}
-              >
-                <Picker.Item label="Select a recipe..." value="" />
-                {availableRecipes.length === 0 ? (
-                  <Picker.Item label="No recipes available (low inventory)" value="" />
-                ) : (
-                  availableRecipes.map((r) => (
-                    <Picker.Item key={r} label={r} value={r} />
-                  ))
-                )}
-              </Picker>
+              <Dropdown
+                value={item.name}
+                options={
+                  availableRecipes.length === 0
+                    ? [{ label: 'No recipes available (low inventory)', value: '' }]
+                    : [{ label: 'Select a recipe...', value: '' }, ...availableRecipes.map(r => ({ label: r, value: r }))]
+                }
+                onChange={(v) => updateItem(item.id, 'name', v)}
+              />
             </View>
 
             <View style={styles.quantityContainer}>

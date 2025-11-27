@@ -1,6 +1,6 @@
+import Dropdown from '@/components/Dropdown';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
-import { Picker } from '@react-native-picker/picker';
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -217,30 +217,29 @@ export default function AddInventoryItemScreen() {
             </View>
 
             <Text style={[styles.label, { marginBottom: 6 }]}>Item Name</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={r.name}
-                onValueChange={(value) => {
-                  updateRow(r.id, { name: value });
-                  if (value && nameToIconMap[value]) updateRow(r.id, { iconKey: nameToIconMap[value] });
-
-                  // Do not call prediction here. Prediction will be triggered when the user selects a storage location.
-                  if (!value) {
-                    lastRequestedRef.current[r.id] = null;
-                    updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
-                  }
-                }}
-              >
-                <Picker.Item label="Select an item..." value="" />
-                <Picker.Item label="BURGER BUN" value="BURGER BUN" />
-                <Picker.Item label="BEEF" value="BEEF" />
-                <Picker.Item label="LETTUCE" value="LETTUCE" />
-                <Picker.Item label="PICKLES" value="PICKLES" />
-                <Picker.Item label="CHEESE" value="CHEESE" />
-                <Picker.Item label="TOMATO" value="TOMATO" />
-                <Picker.Item label="ONION" value="ONION" />
-              </Picker>
-            </View>
+              <View style={styles.pickerWrapper}>
+                <Dropdown
+                  value={r.name}
+                  options={[
+                    { label: 'Select an item...', value: '' },
+                    { label: 'BURGER BUN', value: 'BURGER BUN' },
+                    { label: 'BEEF', value: 'BEEF' },
+                    { label: 'LETTUCE', value: 'LETTUCE' },
+                    { label: 'PICKLES', value: 'PICKLES' },
+                    { label: 'CHEESE', value: 'CHEESE' },
+                    { label: 'TOMATO', value: 'TOMATO' },
+                    { label: 'ONION', value: 'ONION' },
+                  ]}
+                  onChange={(value) => {
+                    updateRow(r.id, { name: value });
+                    if (value && nameToIconMap[value]) updateRow(r.id, { iconKey: nameToIconMap[value] });
+                    if (!value) {
+                      lastRequestedRef.current[r.id] = null;
+                      updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
+                    }
+                  }}
+                />
+              </View>
 
             {r.name && r.fetchingPrediction && (
               <View style={styles.predictionCard}>
@@ -260,22 +259,22 @@ export default function AddInventoryItemScreen() {
 
                 <Text style={[styles.label, { marginTop: 8 }]}>Storage Location</Text>
                 <View style={[styles.pickerWrapper, { marginBottom: 8 }]}> 
-                  <Picker
-                    selectedValue={r.storageLocation ?? ''}
-                    onValueChange={(value) => {
+                  <Dropdown
+                    value={r.storageLocation ?? ''}
+                    options={[
+                      { label: 'Select the storage location...', value: '' },
+                      { label: 'REFRIGERATOR', value: 'REFRIGERATOR' },
+                      { label: 'FREEZER', value: 'FREEZER' },
+                      { label: 'PANTRY', value: 'PANTRY' },
+                    ]}
+                    onChange={(value) => {
                       updateRow(r.id, { storageLocation: value });
-                      // trigger prediction only when storage location is selected and we have an ingredient name
                       const ingredient = rows.find(rr => rr.id === r.id)?.name;
                       if (ingredient && ingredient !== '' && value) {
                         fetchPredictionForRow(r.id, ingredient);
                       }
                     }}
-                  >
-                    <Picker.Item label="Select the storage location..." value="" />
-                    <Picker.Item label="REFRIGERATOR" value="REFRIGERATOR" />
-                    <Picker.Item label="FREEZER" value="FREEZER" />
-                    <Picker.Item label="PANTRY" value="PANTRY" />
-                  </Picker>
+                  />
                 </View>
 
                 <Text style={[styles.label, { marginTop: 8 }]}>Quantity</Text>
@@ -288,14 +287,15 @@ export default function AddInventoryItemScreen() {
                 keyboardType="number-pad"
               />
               <View style={[styles.pickerWrapper, styles.unitPickerWrapper]}>
-                <Picker
-                  selectedValue={r.unit ?? 'pcs'}
-                  onValueChange={(value) => updateRow(r.id, { unit: value })}
-                >
-                  <Picker.Item label="pcs" value="pcs" />
-                  <Picker.Item label="g" value="g" />
-                  <Picker.Item label="slices" value="slices" />
-                </Picker>
+                <Dropdown
+                  value={r.unit ?? 'pcs'}
+                  options={[
+                    { label: 'pcs', value: 'pcs' },
+                    { label: 'g', value: 'g' },
+                    { label: 'slices', value: 'slices' },
+                  ]}
+                  onChange={(val) => updateRow(r.id, { unit: val })}
+                />
               </View>
             </View>
           </View>
