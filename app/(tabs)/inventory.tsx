@@ -210,7 +210,13 @@ export default function InventoryScreen() {
       {/* Buttons */}
       <View style={styles.buttonContainer}>
         <PrimaryButton onPress={() => router.push('/add-inventory-item')}>ADD ITEM MANUALLY</PrimaryButton>
-        <PrimaryButton onPress={() => router.push('/camera')} style={{ marginTop: 12 }}>USE COMPUTER VISION</PrimaryButton>
+        <PrimaryButton
+          onPress={() => router.push('/camera')}
+          style={{ marginTop: 12, backgroundColor: '#f59e0b', shadowColor: '#f59e0b' }}
+          textStyle={{ color: '#000' }}
+        >
+          USE COMPUTER VISION
+        </PrimaryButton>
         <PrimaryButton onPress={() => router.push('/inventoryStats')} style={{ marginTop: 12 }}>INVENTORY STATISTICS</PrimaryButton>
       </View>
 

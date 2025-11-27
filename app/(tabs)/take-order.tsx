@@ -156,9 +156,9 @@ export default function TakeOrderScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.label}>Order Items</Text>
-          <TouchableOpacity style={styles.addButton} onPress={addItem}>
-            <Text style={styles.addButtonText}>+ Add Item</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.addButton} onPress={addItem}>
+              <Text style={styles.addButtonText}>+ Add Item</Text>
+            </TouchableOpacity>
         </View>
 
         {items.map((item, index) => (
@@ -222,7 +222,7 @@ export default function TakeOrderScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color="#000" />
         ) : (
           <Text style={styles.confirmButtonText}>CONFIRM ORDER</Text>
         )}
@@ -246,22 +246,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 30,
     marginBottom: 24,
-    backgroundColor: 'rgba(244, 162, 97, 0.12)',
+    backgroundColor: Colors.light.headerBg,
     paddingVertical: 20,
     paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.18)',
+    borderRadius: 0,
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.light.text,
+    color: Colors.light.headerText,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(17, 24, 28, 0.7)',
+    color: 'rgba(255,255,255,0.92)',
     marginTop: 4,
   },
   section: {
@@ -280,21 +280,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   input: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFFFF',
     padding: 14,
     borderRadius: 12,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.15)',
+    borderColor: 'rgba(0,0,0,0.06)',
     marginBottom: 12,
     color: Colors.light.text,
   },
   itemCard: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: Colors.light.tint,
+    shadowColor: 'rgba(0,0,0,0.08)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: Colors.light.tint,
     borderWidth: 1,
-    borderColor: 'rgba(244, 162, 97, 0.18)',
+    borderColor: 'rgba(0,0,0,0.04)',
   },
   itemHeader: {
     flexDirection: 'row',
@@ -368,36 +368,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#f59e0b',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 12,
-    shadowColor: Colors.light.tint,
+    shadowColor: '#f59e0b',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
   addButtonText: {
-    color: '#FFFFFF',
+    color: '#000',
     fontSize: 12,
     fontWeight: '700',
   },
   confirmButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#f59e0b',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 12,
     marginBottom: 12,
-    shadowColor: Colors.light.tint,
+    shadowColor: '#f59e0b',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 6,
   },
   confirmButtonText: {
-    color: '#FFFFFF',
+    color: '#000',
     fontWeight: '700',
     fontSize: 16,
     letterSpacing: 0.5,

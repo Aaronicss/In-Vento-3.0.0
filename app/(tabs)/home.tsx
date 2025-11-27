@@ -147,7 +147,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    padding: 20,
+    paddingHorizontal: 0,
+    width: '100%',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 15,
     padding: 15,
-    marginBottom: 15,
+    marginBottom: 12,
     justifyContent: "space-between",
   },
   tile2Title: {

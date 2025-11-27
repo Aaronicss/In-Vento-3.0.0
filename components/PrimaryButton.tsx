@@ -1,14 +1,15 @@
 import { Colors } from '@/constants/theme';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps, ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextStyle, TouchableOpacity, TouchableOpacityProps, ViewStyle } from 'react-native';
 
 type Props = TouchableOpacityProps & {
   children: React.ReactNode;
   loading?: boolean;
   style?: ViewStyle | ViewStyle[];
+  textStyle?: TextStyle | TextStyle[];
 };
 
-export default function PrimaryButton({ children, loading = false, style, disabled, ...rest }: Props) {
+export default function PrimaryButton({ children, loading = false, style, textStyle, disabled, ...rest }: Props) {
   return (
     <TouchableOpacity
       accessibilityRole="button"
@@ -20,7 +21,7 @@ export default function PrimaryButton({ children, loading = false, style, disabl
       {loading ? (
         <ActivityIndicator color="#FFFFFF" />
       ) : (
-        <Text style={styles.text}>{children}</Text>
+        <Text style={[styles.text, textStyle]}>{children}</Text>
       )}
     </TouchableOpacity>
   );
