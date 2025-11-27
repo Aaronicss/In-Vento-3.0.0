@@ -4,7 +4,9 @@ import { useInventory } from '@/contexts/InventoryContext';
 import { useOrders } from '@/contexts/OrdersContext';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Easing, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
 
 export default function TileHome() {
   const router = useRouter();
@@ -22,10 +24,17 @@ export default function TileHome() {
   }, [entrance]);
 
   const tiles = [
-    { key: 'inventory', label: 'Inventory', route: '/(tabs)/inventory', icon: 'inventory', count: inventoryItems.length },
-    { key: 'orders', label: 'Orders', route: '/orders', icon: 'list.bullet', count: orders.length },
-    { key: 'take-order', label: 'Take Order', route: '/take-order', icon: 'cart.fill', count: 0 },
-    { key: 'alerts', label: 'Alerts', route: '/alerts', icon: 'bell.fill', count: 0 },
+    { key: 'inventory', label: 'Inventory', route: '/(tabs)/inventory', icon: 'inventory', count: inventoryItems.length, bgColor: '#000000', textColor: '#ffffff' },
+    { key: 'orders', label: 'Orders', route: '/orders', icon: 'list.bullet', count: orders.length, bgColor: '#f59e0b', textColor: '#000000' },
+    { key: 'take-order', label: 'Take Order', route: '/take-order', icon: 'cart.fill', count: 0, bgColor: '#f59e0b', textColor: '#000000' },
+    { key: 'alerts', label: 'Alerts', route: '/alerts', icon: 'bell.fill', count: 0, bgColor: '#000000', textColor: '#ffffff' },
+  ];
+
+  const tiles2 = [
+    { title: "ITEMS IN\nINVENTORY", value: "10", bgColor: "#000000", textColor: "#ffffff" },
+    { title: "LOW\nSTOCK", value: "5", bgColor: "#f59e0b", textColor: "#000000" },
+    { title: "PENDING\nORDERS", value: "10", bgColor: "#f59e0b", textColor: "#000000" },
+    { title: "TODAY’S\nSALES", value: "P11,509", bgColor: "#000000", textColor: "#ffffff" },
   ];
 
   // compute alerts using same rule as Alerts page
@@ -53,56 +62,74 @@ export default function TileHome() {
   });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>IN-VENTO</Text>
-      <Text style={styles.subtitle}>Quick Navigation</Text>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        
+        <Image 
+          source={require('../../assets/homeburg.jpg')}
+          style={styles.burgerImage}
+          resizeMode="cover"
+        />
+        <Text style={styles.title}>INVENTORY DASHBOARD</Text>
+        <View style={styles.container2}>
+        {tiles2.map((tile, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[styles.tile2, { backgroundColor: tile.bgColor }]}
+        >
+          <Text style={[styles.tile2Title, { color: tile.textColor }]} numberOfLines={2} ellipsizeMode="tail">{tile.title}</Text>
+          <Text style={[styles.tile2Value, { color: tile.textColor }]} numberOfLines={1} ellipsizeMode="tail">{tile.value}</Text>
+        </TouchableOpacity>
+      ))}</View>
+        <Text style={styles.title}>IN-VENTO</Text>
+        <Text style={styles.subtitle}>Quick Navigation</Text>
 
-      <TouchableOpacity style={styles.scanButton} onPress={() => router.push('/camera')}> 
-        <Text style={styles.scanButtonText}>Scan Inventory</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.scanButton} onPress={() => router.push('/camera')}> 
+          <Text style={styles.scanButtonText}>Scan Inventory</Text>
+        </TouchableOpacity>
 
-      {/* compute alerts count for badge */}
-      {/** derive alerts using same rule as alerts page */}
-      {/** this is a noop render block used to compute alertsCount in component scope */}
-      <></>
+        {/* compute alerts count for badge */}
+        {/** derive alerts using same rule as alerts page */}
+        {/** this is a noop render block used to compute alertsCount in component scope */}
+        <></>
 
-      <View style={styles.grid}>
-        {tiles.map((t, idx) => {
-          const animatedStyle = {
-            opacity: entrance,
-            transform: [
-              {
-                translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }),
-              },
-            ],
-          } as any;
+        <View style={styles.grid}>
+          {tiles.map((t, idx) => {
+            const animatedStyle = {
+              opacity: entrance,
+              transform: [
+                {
+                  translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }),
+                },
+              ],
+            } as any;
 
-          return (
-            <Animated.View key={t.key} style={[styles.tileWrapper, styles.twoCol, animatedStyle]}>
-              <TouchableOpacity
-                style={styles.tile}
-                onPress={() => router.push(t.route as any)}
-                activeOpacity={0.9}
-              >
-                <View style={styles.tileLeft}>
-                  <IconSymbol name={t.icon as any} size={34} color={Colors.light.tint} />
-                  <View style={styles.tileTextWrap}>
-                    <Text style={styles.tileLabel}>{t.label}</Text>
-                    <Text style={styles.tileHint}>Tap to open</Text>
+            return (
+              <Animated.View key={t.key} style={[styles.tileWrapper, styles.twoCol, animatedStyle]}>
+                <TouchableOpacity
+                  style={[styles.tile, { backgroundColor: (t as any).bgColor ?? '#FFF7ED' }]}
+                  onPress={() => router.push(t.route as any)}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.tileHeaderRow}>
+                    <Text style={[styles.tileLabel, { color: (t as any).textColor ?? Colors.light.tint }]}>{t.label}</Text>
+                    {t.count > 0 && (
+                      <View style={[styles.badge, t.key === 'alerts' && (t as any).critical > 0 ? styles.criticalBadge : null]}>
+                        <Text style={styles.badgeText}>{t.count}</Text>
+                      </View>
+                    )}
                   </View>
-                </View>
 
-                {t.count > 0 && (
-                  <View style={[styles.badge, t.key === 'alerts' && (t as any).critical > 0 ? styles.criticalBadge : null]}>
-                    <Text style={styles.badgeText}>{t.count}</Text>
+                  <View style={styles.tileIconWrap}>
+                    <IconSymbol name={t.icon as any} size={64} color={(t as any).textColor ?? Colors.light.tint} />
                   </View>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        })}
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -112,6 +139,50 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
     padding: 20,
     alignItems: 'center',
+  },
+  container2: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    padding: 20,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    backgroundColor: Colors.light.background,
+    paddingBottom: 40,
+  },
+  burgerImage: {
+    width: screenWidth, // full width of screen
+    height: 200, // adjust height as needed
+  },
+  tile2: {
+    width: "48%",
+    height: 120,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    justifyContent: "space-between",
+  },
+  tile2Title: {
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 20,
+    flexWrap: 'wrap',
+    includeFontPadding: false,
+  },
+  tile2Value: {
+    fontSize: 20,
+    fontWeight: '900',
+    textAlign: 'right',
+  },
+  title2: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  value: {
+    fontSize: 28,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   title: {
     fontSize: 28,
@@ -140,28 +211,28 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   tile: {
+    // use compact card style similar to tile2
     width: '100%',
-    height: 140,
+    height: 120,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    justifyContent: 'space-between',
     backgroundColor: '#FFF7ED',
-    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(244,162,97,0.18)',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
+    alignItems: 'flex-start',
   },
   tileLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
     color: Colors.light.tint,
+    textAlign: 'center',
   },
   iconRow: {
     position: 'absolute',
@@ -194,8 +265,10 @@ const styles = StyleSheet.create({
     color: 'rgba(17,24,28,0.6)'
   }
   ,
-  tileLeft: { flexDirection: 'row', alignItems: 'center' },
-  tileTextWrap: { marginLeft: 12 },
+  tileLeft: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
+  tileTextWrap: { marginTop: 8, alignItems: 'center' },
+  tileHeaderRow: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  tileIconWrap: { width: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 },
   scanButton: {
     marginTop: 12,
     width: '100%',

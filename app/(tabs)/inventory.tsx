@@ -138,6 +138,69 @@ export default function InventoryScreen() {
     });
   }, [inventoryItems, calculateProgress, getStatus, calculateTimeRemaining]);
 
+  // Compute per-ingredient batch numbers based on creation order (oldest -> newest)
+  const batchNumberMap = useMemo(() => {
+    const byCreated = [...inventoryItems].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const counters: Record<string, number> = {};
+    const map: Record<string, number> = {};
+    for (const it of byCreated) {
+      const name = (it.name || '').toString().toUpperCase();
+      counters[name] = (counters[name] || 0) + 1;
+      map[it.id] = counters[name];
+    }
+    return map;
+  }, [inventoryItems]);
+
+  // Small presentational component for an inventory card to keep JSX simple
+  const InventoryCard = ({ item, batchNo }: { item: any; batchNo: number }) => {
+    return (
+      <View style={styles.tileCard}>
+        <View style={styles.tileCardRow}>
+          <Image source={getIconSource(item.icon)} style={styles.cardIcon} />
+
+          <View style={styles.cardMain}>
+            <View style={styles.cardTitleRow}>
+              <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+              <View style={styles.batchBadge}>
+                <Text style={styles.batchBadgeText}>{`B${batchNo}`}</Text>
+              </View>
+            </View>
+
+            <ProgressBar progress={item.displayProgress} color={getFreshnessColor(item.displayStatus)} style={styles.cardProgress} />
+
+            <Text style={styles.cardQty}>{item.count}pcs</Text>
+
+            <Text style={styles.cardDeliveredLabel}>Delivered on:</Text>
+            <Text style={styles.cardEstimate}>Est: {item.displayTimeRemaining}</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardFooter}>
+          <View style={[styles.freshnessPill, { backgroundColor: getFreshnessColor(item.displayStatus) }]}>
+            <Text style={styles.freshnessPillText}>{item.displayStatus}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.removeButtonInline, updatingItems.has(item.id) && styles.smallButtonDisabled]}
+            onPress={async () => {
+              setUpdatingItems((prev) => new Set(prev).add(item.id));
+              try {
+                await removeInventoryItem(item.id);
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setUpdatingItems((prev) => { const next = new Set(prev); next.delete(item.id); return next; });
+              }
+            }}
+            disabled={updatingItems.has(item.id)}
+          >
+            {updatingItems.has(item.id) ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.removeButtonText}>Remove</Text>}
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* Greeting */}
@@ -181,120 +244,10 @@ export default function InventoryScreen() {
         </View>
       ) : (
         <View style={styles.tilesContainer}>
-          {itemsWithDisplayData.map((item) => (
-            <View key={item.id} style={styles.tile}>
-              <View style={styles.tileTop}>
-                <Image source={getIconSource(item.icon)} style={styles.tileIcon} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.tileName} numberOfLines={2}>{item.name}</Text>
-                    {item.storageLocation ? (
-                      <Text style={styles.tileLocation}>{item.storageLocation}</Text>
-                    ) : null}
-                  </View>
-              </View>
-
-              <ProgressBar
-                progress={item.displayProgress}
-                color={getFreshnessColor(item.displayStatus)}
-                style={styles.tileProgress}
-              />
-
-              <View style={styles.timeAndFreshness}>
-                <Text style={styles.tileTime}>Est: {item.displayTimeRemaining}</Text>
-                {item.freshnessLoading ? (
-                  <ActivityIndicator size="small" color="#666" style={styles.freshnessLoader} />
-                ) : (
-                  <View style={[styles.statusTag, { backgroundColor: getFreshnessColor(item.displayStatus), marginLeft: 8 }]}>
-                    <Text style={styles.statusText}>{item.displayStatus}</Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.tileFooter}>
-                <View style={styles.tileActionsColumn}>
-                  <View style={styles.tileActionsRow}>
-                  <TouchableOpacity
-                    style={[styles.tileSmallButton, updatingItems.has(item.id) && styles.smallButtonDisabled]}
-                    onPress={async () => {
-                      setUpdatingItems((prev) => new Set(prev).add(item.id));
-                      try {
-                        await incrementCount(item.id);
-                      } catch (error) {
-                        console.error('Error incrementing count:', error);
-                      } finally {
-                        setUpdatingItems((prev) => {
-                          const next = new Set(prev);
-                          next.delete(item.id);
-                          return next;
-                        });
-                      }
-                    }}
-                    disabled={updatingItems.has(item.id)}
-                  >
-                    {updatingItems.has(item.id) ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.smallButtonText}>+</Text>
-                    )}
-                  </TouchableOpacity>
-
-                  <Text style={styles.tileCount}>{item.count}</Text>
-
-                  <TouchableOpacity
-                    style={[styles.tileSmallButton, updatingItems.has(item.id) && styles.smallButtonDisabled]}
-                    onPress={async () => {
-                      setUpdatingItems((prev) => new Set(prev).add(item.id));
-                      try {
-                        await decrementCount(item.id);
-                      } catch (error) {
-                        console.error('Error decrementing count:', error);
-                      } finally {
-                        setUpdatingItems((prev) => {
-                          const next = new Set(prev);
-                          next.delete(item.id);
-                          return next;
-                        });
-                      }
-                    }}
-                    disabled={updatingItems.has(item.id)}
-                  >
-                    {updatingItems.has(item.id) ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.smallButtonText}>-</Text>
-                    )}
-                  </TouchableOpacity>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[styles.tileRemoveButton, updatingItems.has(item.id) && styles.smallButtonDisabled]}
-                    onPress={async () => {
-                      setUpdatingItems((prev) => new Set(prev).add(item.id));
-                      try {
-                        await removeInventoryItem(item.id);
-                      } catch (error) {
-                        console.error('Error removing item:', error);
-                      } finally {
-                        setUpdatingItems((prev) => {
-                          const next = new Set(prev);
-                          next.delete(item.id);
-                          return next;
-                        });
-                      }
-                    }}
-                    disabled={updatingItems.has(item.id)}
-                  >
-                    {updatingItems.has(item.id) ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.removeButtonText}>Remove</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-                <View style={{ width: 8 }} />
-              </View>
-            </View>
-          ))}
+          {itemsWithDisplayData.map((item, idx) => {
+            const batchNo = batchNumberMap[item.id] ?? idx + 1;
+            return <InventoryCard key={item.id} item={item} batchNo={batchNo} />;
+          })}
         </View>
       )}
 
@@ -727,5 +680,42 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 12,
+  },
+  /* Card-style tile to match home design */
+  tileCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  tileCardRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  cardIcon: { width: 72, height: 72, marginRight: 12, resizeMode: 'contain' },
+  cardMain: { flex: 1 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardTitle: { fontSize: 18, fontWeight: '800', color: Colors.light.text },
+  batchBadge: { backgroundColor: 'rgba(0,0,0,0.12)', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
+  batchBadgeText: { fontWeight: '800', color: '#000' },
+  cardProgress: { height: 8, borderRadius: 6, marginVertical: 8, backgroundColor: 'rgba(0,0,0,0.06)' },
+  cardQty: { color: 'rgba(0,0,0,0.45)', fontSize: 14, marginBottom: 6 },
+  cardDeliveredLabel: { fontWeight: '800', color: Colors.light.text, marginTop: 4 },
+  cardEstimate: { fontWeight: '700', color: Colors.light.text, marginTop: 2 },
+  cardFooter: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  freshnessPill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18 },
+  freshnessPillText: { color: '#fff', fontWeight: '800' },
+  removeButtonInline: {
+    backgroundColor: '#FF5252',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
