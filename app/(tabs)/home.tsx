@@ -14,6 +14,28 @@ export default function TileHome() {
   const { inventoryItems } = useInventory();
   const { orders } = useOrders();
 
+  // low-stock count (load threshold from preferences)
+  const [lowStockThreshold, setLowStockThreshold] = React.useState<number | null>(null);
+  const [lowStockCount, setLowStockCount] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    let mounted = true;
+    import('@/services/preferencesService')
+      .then(mod => mod.getLowStockThreshold())
+      .then(t => {
+        if (!mounted) return;
+        setLowStockThreshold(t);
+        setLowStockCount(inventoryItems.filter(i => i.count <= t).length);
+      })
+      .catch(() => {
+        const t = 5;
+        if (!mounted) return;
+        setLowStockThreshold(t);
+        setLowStockCount(inventoryItems.filter(i => i.count <= t).length);
+      });
+    return () => { mounted = false; };
+  }, [inventoryItems]);
+
   // entrance animation for tiles
   const entrance = useRef(new Animated.Value(0)).current;
 
@@ -32,10 +54,10 @@ export default function TileHome() {
   ];
 
   const tiles2 = [
-    { title: "ITEMS IN\nINVENTORY", value: "10", bgColor: "#000000", textColor: "#ffffff" },
-    { title: "LOW\nSTOCK", value: "5", bgColor: "#f59e0b", textColor: "#000000" },
-    { title: "PENDING\nORDERS", value: "10", bgColor: "#f59e0b", textColor: "#000000" },
-    { title: "TODAY’S\nSALES", value: "P11,509", bgColor: "#000000", textColor: "#ffffff" },
+    { title: "ITEMS IN\nINVENTORY", value: String(inventoryItems.length), bgColor: "#000000", textColor: "#ffffff", route: '/(tabs)/inventory' },
+    { title: "LOW\nSTOCK", value: "5", bgColor: "#f59e0b", textColor: "#000000", route: '/(tabs)/inventory' },
+    { title: "PENDING\nORDERS", value: String(orders.length), bgColor: "#f59e0b", textColor: "#000000", route: '/orders' },
+    { title: "TODAY’S\nSALES", value: "P11,509", bgColor: "#000000", textColor: "#ffffff", route: '/orders' },
   ];
 
   // compute alerts using same rule as Alerts page
@@ -78,15 +100,20 @@ export default function TileHome() {
           </View>
         </View>
         <View style={styles.container2}>
-          {tiles2.map((tile, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.tile2, { backgroundColor: tile.bgColor }]}
-            >
-              <Text style={[styles.tile2Title, { color: tile.textColor }]} numberOfLines={2} ellipsizeMode="tail">{tile.title}</Text>
-              <Text style={[styles.tile2Value, { color: tile.textColor }]} numberOfLines={1} ellipsizeMode="tail">{tile.value}</Text>
-            </TouchableOpacity>
-          ))}
+          {tiles2.map((tile, index) => {
+            const displayedValue = tile.title && tile.title.toUpperCase().includes('LOW') ? String(lowStockCount) : tile.value;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[styles.tile2, { backgroundColor: tile.bgColor }]}
+                activeOpacity={0.85}
+                onPress={() => tile.route ? router.push(tile.route as any) : undefined}
+              >
+                <Text style={[styles.tile2Title, { color: tile.textColor }]} numberOfLines={2} ellipsizeMode="tail">{tile.title}</Text>
+                <Text style={[styles.tile2Value, { color: tile.textColor }]} numberOfLines={1} ellipsizeMode="tail">{displayedValue}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <PrimaryButton onPress={() => router.push('/camera')} style={{ marginTop: 12, width: '100%' }}>SCAN INVENTORY</PrimaryButton>

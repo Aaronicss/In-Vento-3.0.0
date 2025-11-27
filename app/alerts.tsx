@@ -1,13 +1,21 @@
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
+import { getLowStockThreshold } from '@/services/preferencesService';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useInventory } from '../contexts/InventoryContext';
 
 export default function AlertsPage() {
   const { inventoryItems } = useInventory();
   const router = useRouter();
+  const [lowStockThreshold, setLowStockThreshold] = useState<number>(5);
+
+  useEffect(() => {
+    let mounted = true;
+    getLowStockThreshold().then((t) => { if (mounted) setLowStockThreshold(t); });
+    return () => { mounted = false; };
+  }, []);
   // derive alerts with severity and sort them
   const alerts = inventoryItems
     .map((it) => {
@@ -34,8 +42,30 @@ export default function AlertsPage() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Alerts</Text>
+      <Text style={{ marginBottom: 8, color: 'rgba(17,24,28,0.7)' }}>Low-stock threshold: {lowStockThreshold} items or less</Text>
+
+      {/* Low-stock items */}
+      <Text style={{ fontWeight: '800', marginBottom: 8 }}>Low Stock</Text>
+      {inventoryItems.filter(i => i.count <= lowStockThreshold).length === 0 ? (
+        <View style={styles.empty}><Text style={styles.emptyText}>No low-stock items</Text></View>
+      ) : (
+        inventoryItems
+          .filter(i => i.count <= lowStockThreshold)
+          .map(i => (
+            <TouchableOpacity key={i.id} style={styles.card} onPress={() => router.push('/(tabs)/inventory')}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{i.name}</Text>
+                <Text style={{ fontWeight: '700' }}>{i.count} {i.unit}</Text>
+              </View>
+              <Text style={styles.cardText}>Storage: {(i.storageLocation || i.storage_location || 'UNKNOWN').toString().toUpperCase()}</Text>
+            </TouchableOpacity>
+          ))
+      )}
+
+      {/* Expiry alerts (kept below) */}
+      <Text style={{ fontWeight: '800', marginTop: 12, marginBottom: 8 }}>Expiry Alerts</Text>
       {alerts.length === 0 ? (
-        <View style={styles.empty}><Text style={styles.emptyText}>No alerts</Text></View>
+        <View style={styles.empty}><Text style={styles.emptyText}>No expiry alerts</Text></View>
       ) : (
         alerts.map(({ item, progress, severity }) => (
           <View key={item.id} style={styles.card}>

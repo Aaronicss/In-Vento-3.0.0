@@ -1,17 +1,60 @@
 import { Colors } from '@/constants/theme';
+import { DEFAULT_THRESHOLD, getLowStockThreshold, setLowStockThreshold } from '@/services/preferencesService';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function PreferencesScreen() {
   const router = useRouter();
+  const [threshold, setThreshold] = useState<number | null>(null);
+  const [input, setInput] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    getLowStockThreshold().then((t) => {
+      if (!mounted) return;
+      setThreshold(t);
+      setInput(String(t));
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const save = async () => {
+    const n = Number(input);
+    if (isNaN(n) || n < 0) {
+      Alert.alert('Invalid value', 'Please enter a valid non-negative number');
+      return;
+    }
+    try {
+      await setLowStockThreshold(n);
+      setThreshold(n);
+      Alert.alert('Saved', `Low stock threshold set to ${n}`);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save preference');
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Preferences</Text>
-      <Text style={styles.subtitle}>App preferences and settings go here.</Text>
+      <Text style={styles.subtitle}>Configure low-stock threshold (ingredients with count ≤ threshold are considered low stock).</Text>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <View style={{ marginTop: 12 }}>
+        <Text style={{ marginBottom: 6, fontWeight: '700' }}>Low-stock threshold</Text>
+        <TextInput
+          value={input}
+          onChangeText={setInput}
+          keyboardType="number-pad"
+          placeholder={String(DEFAULT_THRESHOLD)}
+          style={{ backgroundColor: '#fff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: Colors.light.tint }}
+        />
+
+        <TouchableOpacity style={[styles.backButton, { marginTop: 12 }]} onPress={save}>
+          <Text style={styles.backButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={[styles.backButton, { marginTop: 18 }]} onPress={() => router.back()}>
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
     </View>
