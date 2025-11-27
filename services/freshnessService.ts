@@ -7,9 +7,10 @@
  */
 
 import {
-  calculateTimeInRefrigerator,
-  FreshnessPredictionResponse,
-  predictFreshness,
+    calculateTimeInRefrigerator,
+    FreshnessPredictionResponse,
+    predictFreshness,
+    StorageType,
 } from './freshnessApi';
 import { fetchWeatherData } from './weatherApi';
 
@@ -18,6 +19,8 @@ export interface FreshnessPredictionInput {
   addedAt: Date;
   city: string;
   weatherApiKey: string;
+  // Optional storage classification for the item (FREEZER|REFRIGERATOR|PANTRY)
+  storageType?: StorageType;
 }
 
 export interface FreshnessResult extends FreshnessPredictionResponse {
@@ -47,6 +50,7 @@ export async function getFreshnessPrediction(
       humidity: weatherData.humidity,
       time_in_refrigerator: timeInRefrigerator,
       ingredient_type: input.ingredientType,
+      storage_type: input.storageType ?? 'REFRIGERATOR',
     });
 
     return {
@@ -91,6 +95,7 @@ export async function getBatchFreshnessPredictions(
           humidity: weatherData.humidity,
           time_in_refrigerator: timeInRefrigerator,
           ingredient_type: input.ingredientType,
+          storage_type: input.storageType ?? 'REFRIGERATOR',
         });
 
         return {

@@ -3,14 +3,31 @@
  * Sends ingredient data to Flask API for freshness classification
  */
 
-const FRESHNESS_API_URL = 'https://freshnessapi2.onrender.com/predict';
-const SHELF_LIFE_API_URL = 'https://freshnessapi2.onrender.com/shelf-life';
+const FRESHNESS_API_URL = 'https://freshnessapi3.onrender.com/predict';
+const SHELF_LIFE_API_URL = 'https://freshnessapi3.onrender.com/shelf-life';
+
+// Enable detailed request/response logging when running in development
+const DEBUG_FRESHNESS_API = typeof __DEV__ !== 'undefined' ? !!__DEV__ : false;
 
 export interface FreshnessPredictionRequest {
   temperature: number;
   humidity: number;
   time_in_refrigerator: number; // hours
   ingredient_type: string;
+  // class name describing storage environment. Allowed values: 'FREEZER', 'REFRIGERATOR', 'PANTRY'
+  storage_type: StorageType;
+}
+
+// Allowed storage environment class names accepted by the ML model
+export type StorageType = 'FREEZER' | 'REFRIGERATOR' | 'PANTRY';
+
+function normalizeStorageType(value?: string): StorageType {
+  if (!value) return 'REFRIGERATOR';
+  const asUpper = value.toUpperCase();
+  if (asUpper === 'FREEZER' || asUpper === 'REFRIGERATOR' || asUpper === 'PANTRY') {
+    return asUpper as StorageType;
+  }
+  return 'REFRIGERATOR';
 }
 
 export interface FreshnessPredictionResponse {
@@ -38,12 +55,15 @@ export async function predictFreshness(
   request: FreshnessPredictionRequest
 ): Promise<FreshnessPredictionResponse> {
   try {
+    const bodyPayload = { ...request, storage_type: normalizeStorageType(request.storage_type) };
+    if (DEBUG_FRESHNESS_API) console.debug('[FreshnessAPI] POST', FRESHNESS_API_URL, JSON.stringify(bodyPayload));
+
     const response = await fetch(FRESHNESS_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify(bodyPayload),
     });
 
     if (!response.ok) {
@@ -53,8 +73,16 @@ export async function predictFreshness(
       );
     }
 
-    const data = await response.json();
-    
+    let data: any = null;
+    try {
+      data = await response.json();
+    } catch (err) {
+      if (DEBUG_FRESHNESS_API) console.warn('[FreshnessAPI] response JSON parse failed', err);
+      throw err;
+    }
+
+    if (DEBUG_FRESHNESS_API) console.debug('[FreshnessAPI] response', response.status, data);
+
     return {
       classification: data.classification || data.prediction || 'Fresh',
       confidence: data.confidence,
@@ -87,19 +115,24 @@ export async function getShelfLifePrediction(
   ingredientType: string,
   temperature: number = 5,
   humidity: number = 50,
-  timeInRefrigerator: number = 0
+  timeInRefrigerator: number = 0,
+  storageType: StorageType = 'REFRIGERATOR'
 ): Promise<number> {
   try {
     // The ML endpoint returns hours_until_expiry; we call the predict endpoint
+    const bodyPayload = {
+      temperature,
+      humidity,
+      time_in_refrigerator: timeInRefrigerator,
+      ingredient_type: ingredientType,
+      storage_type: normalizeStorageType(storageType),
+    };
+    if (DEBUG_FRESHNESS_API) console.debug('[FreshnessAPI] POST', FRESHNESS_API_URL, JSON.stringify(bodyPayload));
+
     const response = await fetch(FRESHNESS_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        temperature,
-        humidity,
-        time_in_refrigerator: timeInRefrigerator,
-        ingredient_type: ingredientType,
-      }),
+      body: JSON.stringify(bodyPayload),
     });
 
     if (!response.ok) {
@@ -109,7 +142,15 @@ export async function getShelfLifePrediction(
       );
     }
 
-    const data: ShelfLifeResponse = await response.json();
+    let data: ShelfLifeResponse | any = null;
+    try {
+      data = await response.json();
+    } catch (err) {
+      if (DEBUG_FRESHNESS_API) console.warn('[FreshnessAPI] shelf-life response JSON parse failed', err);
+      throw err;
+    }
+    if (DEBUG_FRESHNESS_API) console.debug('[FreshnessAPI] shelf-life response', response.status, data);
+
     // Prefer hours_until_expiry; fall back to converting days if provided
     if (data.hours_until_expiry !== undefined && data.hours_until_expiry !== null) {
       return data.hours_until_expiry;

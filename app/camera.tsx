@@ -238,7 +238,6 @@ export default function CameraScreen() {
     <View style={styles.container}>
       <View style={styles.headerGradient}>
         <Text style={styles.headerTitle}>📸 SCAN INVENTORY</Text>
-        <Text style={styles.headerSubtitle}>Point at items to detect & analyze</Text>
       </View>
 
       <CameraView ref={cameraRef} style={styles.camera} />
@@ -283,10 +282,20 @@ export default function CameraScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.captureHintWrapper}>
-              <Text style={styles.captureHintText}>
-                {loading ? '🔍 Analyzing...' : autoCaptureActive ? `Next: ${countdown}s` : '📷 Tap to Capture'}
-              </Text>
+            <View style={styles.autoCaptureRow}>
+              <TouchableOpacity
+                style={[styles.autoToggleButton, !autoCaptureActive && styles.autoToggleButtonPaused]}
+                onPress={() => setAutoCaptureActive(prev => !prev)}
+                disabled={loading}
+              >
+                <Text style={[styles.autoToggleText, !autoCaptureActive && styles.autoToggleTextPaused]}>{autoCaptureActive ? 'Pause' : 'Play'}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.captureHintWrapper}>
+                <Text style={styles.captureHintText}>
+                  {loading ? '🔍 Analyzing...' : autoCaptureActive ? `Next: ${countdown}s` : '📷 Tap to Capture'}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -397,6 +406,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+  },
+
+  autoCaptureRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  autoToggleButton: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  autoToggleButtonPaused: {
+    backgroundColor: 'rgba(0,0,0,0.12)'
+  },
+  autoToggleText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  autoToggleTextPaused: {
+    color: '#fff',
+    opacity: 0.8,
   },
   resetButton: {
     backgroundColor: 'transparent',

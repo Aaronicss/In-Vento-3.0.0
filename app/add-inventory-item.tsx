@@ -161,7 +161,8 @@ export default function AddInventoryItemScreen() {
   };
 
   // Helper to fetch freshness prediction for a specific row+ingredient
-  const fetchPredictionForRow = (rowId: string, ingredient: string) => {
+  // Accept the selected storage location directly to avoid reading stale state
+  const fetchPredictionForRow = (rowId: string, ingredient: string, storageLocation?: string) => {
     // mark requested ingredient and set fetching flag
     lastRequestedRef.current[rowId] = ingredient;
     updateRow(rowId, { fetchingPrediction: true });
@@ -176,7 +177,11 @@ export default function AddInventoryItemScreen() {
     }) : Promise.resolve({ temperature: 5, humidity: 50 });
 
     weatherPromise
-      .then(({ temperature, humidity }) => getShelfLifePrediction(ingredient, temperature, humidity, 0))
+      .then(({ temperature, humidity }) => {
+        // use the provided storageLocation argument when available to avoid stale state
+        const storage = storageLocation ?? rows.find(rr => rr.id === rowId)?.storageLocation ?? 'REFRIGERATOR';
+        return getShelfLifePrediction(ingredient, temperature, humidity, 0, storage as any);
+      })
       .then((predictedHours) => {
         if (lastRequestedRef.current[rowId] !== ingredient) return;
         const days = Math.max(1, Math.ceil(predictedHours / 24));
@@ -271,7 +276,7 @@ export default function AddInventoryItemScreen() {
                       updateRow(r.id, { storageLocation: value });
                       const ingredient = rows.find(rr => rr.id === r.id)?.name;
                       if (ingredient && ingredient !== '' && value) {
-                        fetchPredictionForRow(r.id, ingredient);
+                        fetchPredictionForRow(r.id, ingredient, value);
                       }
                     }}
                   />
