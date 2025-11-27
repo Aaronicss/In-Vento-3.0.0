@@ -153,6 +153,34 @@ export default function InventoryScreen() {
   }, [inventoryItems]);
 
   // Small presentational component for an inventory card to keep JSX simple
+  // Short date formatter: MM/DD/YYYY
+  const formatDateShort = (d?: Date) => {
+    if (!d) return 'Unknown';
+    try {
+      const dt = new Date(d);
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const yyyy = dt.getFullYear();
+      return `${mm}/${dd}/${yyyy}`;
+    } catch (e) {
+      return String(d);
+    }
+  };
+
+  const getStoragePillColor = (storage?: string) => {
+    const s = (storage || '').toString().toUpperCase();
+    switch (s) {
+      case 'FREEZER':
+        return '#3B82F6'; // blue-500
+      case 'REFRIGERATOR':
+        return '#10B981'; // green-500
+      case 'PANTRY':
+        return '#A16207'; // amber/brown
+      default:
+        return 'rgba(0,0,0,0.06)';
+    }
+  };
+
   const InventoryCard = ({ item, batchNo }: { item: any; batchNo: number }) => {
     return (
       <View style={styles.tileCard}>
@@ -162,8 +190,13 @@ export default function InventoryScreen() {
           <View style={styles.cardMain}>
             <View style={styles.cardTitleRow}>
               <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-              <View style={styles.batchBadge}>
-                <Text style={styles.batchBadgeText}>{`B${batchNo}`}</Text>
+              <View style={styles.batchAndStorage}>
+                <View style={[styles.storagePill, { backgroundColor: getStoragePillColor(item.storageLocation || item.storage_location) }]}> 
+                  <Text style={styles.storagePillText}>{(item.storageLocation || item.storage_location || 'UNKNOWN').toString().toUpperCase()}</Text>
+                </View>
+                <View style={[styles.batchBadge, { marginLeft: 8 }]}> 
+                  <Text style={styles.batchBadgeText}>{`B${batchNo}`}</Text>
+                </View>
               </View>
             </View>
 
@@ -172,7 +205,8 @@ export default function InventoryScreen() {
             <Text style={styles.cardQty}>{`${item.count} ${item.unit ?? 'pcs'}`}</Text>
 
             <Text style={styles.cardDeliveredLabel}>Delivered on:</Text>
-            <Text style={styles.cardEstimate}>Est: {item.displayTimeRemaining}</Text>
+            <Text style={styles.cardEstimate}>{formatDateShort(item.createdAt)}</Text>
+            <Text style={[styles.cardEstimate, { marginTop: 6 }]}>Est: {item.displayTimeRemaining}</Text>
           </View>
         </View>
 
@@ -180,6 +214,8 @@ export default function InventoryScreen() {
           <View style={[styles.freshnessPill, { backgroundColor: getFreshnessColor(item.displayStatus) }]}>
             <Text style={styles.freshnessPillText}>{item.displayStatus}</Text>
           </View>
+
+          {/* storage pill moved to the top-right next to the batch badge */}
 
           <TouchableOpacity
             style={[styles.removeButtonInline, updatingItems.has(item.id) && styles.smallButtonDisabled]}
@@ -695,6 +731,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 18, fontWeight: '800', color: Colors.light.text },
   batchBadge: { backgroundColor: 'rgba(0,0,0,0.12)', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
   batchBadgeText: { fontWeight: '800', color: '#000' },
+  batchAndStorage: { flexDirection: 'row', alignItems: 'center' },
   cardProgress: { height: 8, borderRadius: 6, marginVertical: 8, backgroundColor: 'rgba(0,0,0,0.06)' },
   cardQty: { color: 'rgba(0,0,0,0.45)', fontSize: 14, marginBottom: 6 },
   cardDeliveredLabel: { fontWeight: '800', color: Colors.light.text, marginTop: 4 },
@@ -702,6 +739,9 @@ const styles = StyleSheet.create({
   cardFooter: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   freshnessPill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18 },
   freshnessPillText: { color: '#fff', fontWeight: '800' },
+  storagePillWrap: { marginLeft: 12 },
+  storagePill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  storagePillText: { color: '#fff', fontWeight: '700', fontSize: 12 },
   removeButtonInline: {
     backgroundColor: '#FF5252',
     paddingHorizontal: 12,
