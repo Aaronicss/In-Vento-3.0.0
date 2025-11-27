@@ -1,3 +1,4 @@
+import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
@@ -208,24 +209,9 @@ export default function InventoryScreen() {
 
       {/* Buttons */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/add-inventory-item')}
-        >
-          <Text style={styles.buttonText}>ADD ITEM MANUALLY</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/camera')}
-        >
-          <Text style={styles.buttonText}>USE COMPUTER VISION</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/inventoryStats')}
-        >
-          <Text style={styles.buttonText}>INVENTORY STATISTICS</Text>
-        </TouchableOpacity>
+        <PrimaryButton onPress={() => router.push('/add-inventory-item')}>ADD ITEM MANUALLY</PrimaryButton>
+        <PrimaryButton onPress={() => router.push('/camera')} style={{ marginTop: 12 }}>USE COMPUTER VISION</PrimaryButton>
+        <PrimaryButton onPress={() => router.push('/inventoryStats')} style={{ marginTop: 12 }}>INVENTORY STATISTICS</PrimaryButton>
       </View>
 
       {/* Inventory Items Section */}

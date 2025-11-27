@@ -33,7 +33,7 @@ export default function RootLayout() {
           style={styles.profile}
           onPress={() => setSidebarOpen(true)}
         >
-          <MaterialIcons name="person" size={28} color={Colors.light.text} />
+          <MaterialIcons name="person" size={28} color={'#FFFFFF'} />
           <Text style={styles.profileLabel}>Profile</Text>
         </TouchableOpacity>
       </View>
@@ -88,7 +88,7 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  headerSafeArea: { backgroundColor: Colors.light.tint, paddingBottom: 8 },
+  headerSafeArea: { backgroundColor: '#000000', paddingBottom: 8 },
   header: {
     height: 120,
     flexDirection: 'row',
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#000000',
   },
   headerTitle: {
     color: '#ffffff',

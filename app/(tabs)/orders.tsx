@@ -1,3 +1,4 @@
+import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -108,12 +109,7 @@ export default function HomeScreen() {
 
       {/* Buttons */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/take-order')}
-        >
-          <Text style={styles.buttonText}>TAKE ORDER</Text>
-        </TouchableOpacity>
+        <PrimaryButton onPress={() => router.push('/take-order')}>TAKE ORDER</PrimaryButton>
       </View>
 
       {/* Orders Section */}

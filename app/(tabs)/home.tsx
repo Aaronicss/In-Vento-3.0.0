@@ -1,3 +1,4 @@
+import PrimaryButton from '@/components/PrimaryButton';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useInventory } from '@/contexts/InventoryContext';
@@ -65,28 +66,30 @@ export default function TileHome() {
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
         
-        <Image 
-          source={require('../../assets/homeburg.jpg')}
-          style={styles.burgerImage}
-          resizeMode="cover"
-        />
-        <Text style={styles.title}>INVENTORY DASHBOARD</Text>
+        <View style={styles.headerContainer}>
+          <Image
+            source={require('../../assets/homeburg.jpg')}
+            style={styles.burgerImage}
+            resizeMode="cover"
+          />
+          <View style={styles.headerOverlay} />
+          <View style={styles.headerCenter}> 
+            <Text style={styles.headerSubtitle}>INVENTORY DASHBOARD</Text>
+          </View>
+        </View>
         <View style={styles.container2}>
-        {tiles2.map((tile, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[styles.tile2, { backgroundColor: tile.bgColor }]}
-        >
-          <Text style={[styles.tile2Title, { color: tile.textColor }]} numberOfLines={2} ellipsizeMode="tail">{tile.title}</Text>
-          <Text style={[styles.tile2Value, { color: tile.textColor }]} numberOfLines={1} ellipsizeMode="tail">{tile.value}</Text>
-        </TouchableOpacity>
-      ))}</View>
-        <Text style={styles.title}>IN-VENTO</Text>
-        <Text style={styles.subtitle}>Quick Navigation</Text>
+          {tiles2.map((tile, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.tile2, { backgroundColor: tile.bgColor }]}
+            >
+              <Text style={[styles.tile2Title, { color: tile.textColor }]} numberOfLines={2} ellipsizeMode="tail">{tile.title}</Text>
+              <Text style={[styles.tile2Value, { color: tile.textColor }]} numberOfLines={1} ellipsizeMode="tail">{tile.value}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        <TouchableOpacity style={styles.scanButton} onPress={() => router.push('/camera')}> 
-          <Text style={styles.scanButtonText}>Scan Inventory</Text>
-        </TouchableOpacity>
+        <PrimaryButton onPress={() => router.push('/camera')} style={{ marginTop: 12, width: '100%' }}>SCAN INVENTORY</PrimaryButton>
 
         {/* compute alerts count for badge */}
         {/** derive alerts using same rule as alerts page */}
@@ -152,8 +155,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   burgerImage: {
-    width: screenWidth, // full width of screen
-    height: 200, // adjust height as needed
+    width: screenWidth + 40, // extend to cover parent padding (full-bleed)
+    height: 220, // match header container height
+    alignSelf: 'center',
   },
   tile2: {
     width: "48%",
@@ -287,5 +291,64 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '800',
     fontSize: 16,
+  },
+  /* Header with background image */
+  headerContainer: {
+    width: '100%',
+    height: 220,
+    borderRadius: 0,
+    overflow: 'hidden',
+    marginBottom: 12,
+    position: 'relative',
+    marginHorizontal: -20,
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(244,162,97,0.12)'
+  },
+  headerTopRow: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  brandTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#000',
+    textShadowColor: 'rgba(0,0,0,0.12)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  avatarWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    position: 'absolute',
+    bottom: 18,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  headerSubtitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    backgroundColor: '#000000',
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    borderRadius: 0,
+    alignSelf: 'stretch',
+    marginHorizontal: 0,
+    textAlign: 'center',
+    width: '100%'
   },
 });

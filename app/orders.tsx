@@ -1,7 +1,8 @@
+import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useOrders } from '../contexts/OrdersContext';
 
 export default function OrdersPage() {
@@ -20,9 +21,7 @@ export default function OrdersPage() {
           <View key={order.id} style={styles.card}>
             <Text style={styles.cardTitle}>Table #{order.tableNumber}</Text>
             <Text style={styles.cardText}>{order.items.map((i:any) => `${i.quantity}x ${i.name}`).join(', ')}</Text>
-            <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/home')}>
-              <Text style={styles.buttonText}>Back</Text>
-            </TouchableOpacity>
+            <PrimaryButton onPress={() => router.push('/(tabs)/home')}>Back</PrimaryButton>
           </View>
         ))
       )}

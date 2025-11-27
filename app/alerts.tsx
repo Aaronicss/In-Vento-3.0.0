@@ -1,7 +1,8 @@
+import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useInventory } from '../contexts/InventoryContext';
 
 export default function AlertsPage() {
@@ -46,9 +47,7 @@ export default function AlertsPage() {
             </View>
             <Text style={styles.cardText}>Expires: {item.expiresAt.toLocaleString()}</Text>
             <Text style={styles.cardSubText}>Remaining: {Math.max(0, Math.round(progress * 100))}%</Text>
-            <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/inventory')}>
-              <Text style={styles.buttonText}>Open Inventory</Text>
-            </TouchableOpacity>
+            <PrimaryButton onPress={() => router.push('/(tabs)/inventory')}>Open Inventory</PrimaryButton>
           </View>
         ))
       )}
