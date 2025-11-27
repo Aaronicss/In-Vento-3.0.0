@@ -3,8 +3,9 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useOrders } from '@/contexts/OrdersContext';
+import { DEFAULT_PRICES, getRecipePrices } from '@/services/preferencesService';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
@@ -60,6 +61,40 @@ export default function TileHome() {
     { title: "TODAY’S\nSALES", value: "P11,509", bgColor: "#000000", textColor: "#ffffff", route: '/orders' },
   ];
 
+  // load recipe prices (merge from preferences service); used to compute order totals
+  const [recipePrices, setRecipePrices] = useState<Record<string, number>>({ ...DEFAULT_PRICES });
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const p = await getRecipePrices();
+        if (!mounted) return;
+        setRecipePrices(p);
+      } catch (e) {
+        // keep defaults
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const formatPHP = (n: number) => `₱${n.toFixed(2)}`;
+
+  // compute today's sales (local date) by summing item quantity * recipe price
+  const todaySales = useMemo(() => {
+    if (!orders || orders.length === 0) return 0;
+    const today = new Date();
+    const isSameDay = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+
+    return orders.reduce((sum, order) => {
+      if (!order.createdAt || !isSameDay(order.createdAt, today)) return sum;
+      const orderSum = (order.items || []).reduce((s, it) => {
+        const price = recipePrices[it.name] ?? 0;
+        return s + (price * (it.quantity || 0));
+      }, 0);
+      return sum + orderSum;
+    }, 0);
+  }, [orders, recipePrices]);
+
   // compute alerts using same rule as Alerts page
   const alerts = inventoryItems.map((it) => {
     const now = Date.now();
@@ -101,7 +136,12 @@ export default function TileHome() {
         </View>
         <View style={styles.container2}>
           {tiles2.map((tile, index) => {
-            const displayedValue = tile.title && tile.title.toUpperCase().includes('LOW') ? String(lowStockCount) : tile.value;
+            const titleUp = tile.title ? tile.title.toUpperCase() : '';
+            const displayedValue = titleUp.includes('LOW')
+              ? String(lowStockCount)
+              : titleUp.includes('TODAY')
+              ? formatPHP(todaySales)
+              : tile.value;
             return (
               <TouchableOpacity
                 key={index}

@@ -1,5 +1,6 @@
 import Dropdown from '@/components/Dropdown';
 import { Colors } from '@/constants/theme';
+import { DEFAULT_PRICES, getRecipePrices } from '@/services/preferencesService';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -41,6 +42,21 @@ export default function TakeOrderScreen() {
   // Preview state for recipe guide (shows ingredients and shortages before selecting an item)
   const [previewRecipe, setPreviewRecipe] = useState<string | null>(null);
   const [previewQty, setPreviewQty] = useState<number>(1);
+  const [recipePrices, setRecipePrices] = useState<Record<string, number>>({ ...DEFAULT_PRICES });
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const p = await getRecipePrices();
+        if (!mounted) return;
+        setRecipePrices(p);
+      } catch (e) {
+        // ignore, keep defaults
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const computeRecipeSummary = (rName: string, qty = 1) => {
     const recipe = RECIPES[rName];
@@ -157,6 +173,16 @@ export default function TakeOrderScreen() {
       setLoading(false);
     }
   };
+
+  const formatPHP = (n: number) => `₱${n.toFixed(2)}`;
+
+  const orderTotal = useMemo(() => {
+    const validItems = items.filter((item) => item.name && item.name.trim() !== '' && item.quantity > 0);
+    return validItems.reduce((sum, it) => {
+      const price = recipePrices[it.name as string] ?? 0;
+      return sum + price * (it.quantity || 0);
+    }, 0);
+  }, [items, recipePrices]);
 
   // Compute aggregate ingredient totals for selected recipes and compare to inventory
   const ingredientSummary = useMemo(() => {
@@ -304,6 +330,12 @@ export default function TakeOrderScreen() {
               />
             </View>
 
+            {/* show per-item price (from preferences) */}
+            <View style={{ marginTop: 8, marginBottom: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: 'rgba(0,0,0,0.6)', fontWeight: '700' }}>Price</Text>
+              <Text style={{ fontWeight: '800' }}>{formatPHP(recipePrices[item.name as string] ?? 0)}</Text>
+            </View>
+
             <View style={styles.quantityContainer}>
               <Text style={styles.quantityLabel}>Quantity:</Text>
               <View style={styles.quantityControls}>
@@ -329,6 +361,10 @@ export default function TakeOrderScreen() {
       </View>
 
       {/* Confirm Button */}
+      <View style={styles.orderTotalRow}>
+        <Text style={styles.orderTotalLabel}>Order Total</Text>
+        <Text style={styles.orderTotalValue}>{formatPHP(orderTotal)}</Text>
+      </View>
       {/* Ingredients Summary Tile (shows needed vs available and marks missing items) */}
       {Object.keys(ingredientSummary).length > 0 && (
         <View style={styles.summaryTile}>
@@ -571,6 +607,23 @@ const styles = StyleSheet.create({
     color: '#d63333',
     fontWeight: '700',
     fontSize: 13,
+  },
+  orderTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 8,
+    paddingHorizontal: 6,
+  },
+  orderTotalLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.light.text,
+  },
+  orderTotalValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.light.tint,
   },
   recipeRow: {
     flexDirection: 'row',

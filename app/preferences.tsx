@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/theme';
-import { DEFAULT_THRESHOLD, getLowStockThreshold, setLowStockThreshold } from '@/services/preferencesService';
+import { DEFAULT_PRICES, DEFAULT_THRESHOLD, getLowStockThreshold, getRecipePrices, setLowStockThreshold, setRecipePrices } from '@/services/preferencesService';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -8,6 +8,20 @@ export default function PreferencesScreen() {
   const router = useRouter();
   const [threshold, setThreshold] = useState<number | null>(null);
   const [input, setInput] = useState<string>('');
+  const [prices, setPrices] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    getRecipePrices().then((p) => {
+      if (!mounted) return;
+      const asStrings: Record<string, string> = {};
+      Object.keys({ ...DEFAULT_PRICES, ...p }).forEach((k) => {
+        asStrings[k] = String(p[k] ?? DEFAULT_PRICES[k] ?? '');
+      });
+      setPrices(asStrings);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -34,6 +48,24 @@ export default function PreferencesScreen() {
     }
   };
 
+  const savePrices = async () => {
+    try {
+      const parsed: Record<string, number> = {};
+      for (const k of Object.keys(prices)) {
+        const n = Number(prices[k]);
+        if (isNaN(n) || n < 0) {
+          Alert.alert('Invalid price', `Please enter a valid non-negative price for ${k}`);
+          return;
+        }
+        parsed[k] = n;
+      }
+      await setRecipePrices(parsed);
+      Alert.alert('Saved', 'Recipe prices saved. All prices are in Philippine Peso (₱).');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save recipe prices');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Preferences</Text>
@@ -51,6 +83,26 @@ export default function PreferencesScreen() {
 
         <TouchableOpacity style={[styles.backButton, { marginTop: 12 }]} onPress={save}>
           <Text style={styles.backButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ marginTop: 18 }}>
+        <Text style={{ marginBottom: 8, fontWeight: '800' }}>Recipe Prices (₱)</Text>
+        {Object.keys({ ...DEFAULT_PRICES, ...(prices as any) }).map((r) => (
+          <View key={r} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ flex: 1, fontWeight: '700' }}>{r}</Text>
+            <Text style={{ marginRight: 8 }}>₱</Text>
+            <TextInput
+              value={prices[r] ?? String(DEFAULT_PRICES[r] ?? '')}
+              onChangeText={(v) => setPrices(prev => ({ ...prev, [r]: v }))}
+              keyboardType="numeric"
+              style={{ width: 100, backgroundColor: '#fff', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.tint }}
+            />
+          </View>
+        ))}
+
+        <TouchableOpacity style={[styles.backButton, { marginTop: 8 }]} onPress={savePrices}>
+          <Text style={styles.backButtonText}>Save Prices</Text>
         </TouchableOpacity>
       </View>
 
