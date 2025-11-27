@@ -3,7 +3,7 @@ import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useInventory } from '../contexts/InventoryContext';
 import { getShelfLifePrediction } from '../services/freshnessApi';
@@ -31,6 +31,17 @@ const nameToIconMap: { [key: string]: string } = {
   "ONION": "onion",
   "BURGER": "burger",
   "DRINK": "drink",
+};
+
+// Default unit and storage settings per ingredient
+const DEFAULT_ITEM_SETTINGS: Record<string, { unit: string; storageLocation: string; count?: string }> = {
+  'BURGER BUN': { unit: 'pcs', storageLocation: 'PANTRY', count: '1' },
+  'BEEF': { unit: 'pcs', storageLocation: 'REFRIGERATOR', count: '1' },
+  'CHEESE': { unit: 'slices', storageLocation: 'REFRIGERATOR', count: '1' },
+  'LETTUCE': { unit: 'g', storageLocation: 'REFRIGERATOR', count: '100' },
+  'ONION': { unit: 'pcs', storageLocation: 'REFRIGERATOR', count: '1' },
+  'TOMATO': { unit: 'pcs', storageLocation: 'REFRIGERATOR', count: '1' },
+  'PICKLES': { unit: 'g', storageLocation: 'REFRIGERATOR', count: '50' },
 };
 
 // Small helper to format a Date into a readable date + time string
@@ -83,7 +94,8 @@ export default function AddInventoryItemScreen() {
         const shelfLife = '7';
         const predictedExpiry = null;
         const iconKey = nameToIconMap[name] || 'burger';
-        return { id: `row-${name}-${Date.now()}`, name, count: countVal, unit: '', shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' };
+        const defaults = DEFAULT_ITEM_SETTINGS[name] ?? { unit: '', storageLocation: '' };
+        return { id: `row-${name}-${Date.now()}`, name, count: String(count || defaults.count || 1), unit: defaults.unit || '', shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: defaults.storageLocation || '' };
       });
     }
 
@@ -103,13 +115,30 @@ export default function AddInventoryItemScreen() {
       const shelfLife = detectedItem.predictedHours ? Math.ceil(detectedItem.predictedHours / 24).toString() : '7';
       const predictedExpiry = detectedItem.predictedHours ? new Date(Date.now() + detectedItem.predictedHours * 3600 * 1000) : null;
       const iconKey = nameToIconMap[name] || 'burger';
-      return [{ id: `row-${Date.now()}`, name, count: countVal, unit: '', shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: '' }];
+      const defaults = DEFAULT_ITEM_SETTINGS[name] ?? { unit: '', storageLocation: '' };
+      return [{ id: `row-${Date.now()}`, name, count: countVal || defaults.count || '1', unit: defaults.unit || '', shelfLifeDays: shelfLife, iconKey, predictedExpiryDate: predictedExpiry, fetchingPrediction: false, storageLocation: defaults.storageLocation || '' }];
     }
 
     return [initialRow];
   })();
 
   const [rows, setRows] = useState<Array<{ id: string; name: string; count: string; unit?: string; shelfLifeDays: string; iconKey: string; predictedExpiryDate: Date | null; fetchingPrediction?: boolean; storageLocation?: string }>>(initialRowsFromMap);
+
+  // If this screen was populated from camera detections (detectedItemsMap),
+  // trigger freshness predictions for each detected row automatically.
+  useEffect(() => {
+    if (!detectedItemsMap) return;
+    rows.forEach((r) => {
+      if (!r.name) return;
+      if (r.fetchingPrediction) return;
+      if (r.predictedExpiryDate) return;
+      // prefer explicit storageLocation, fall back to defaults map
+      const storage = r.storageLocation || DEFAULT_ITEM_SETTINGS[r.name]?.storageLocation || 'REFRIGERATOR';
+      fetchPredictionForRow(r.id, r.name, storage);
+    });
+    // we intentionally depend on rows so newly-initialized rows will be processed,
+    // and fetchingPrediction guard prevents re-processing.
+  }, [rows, detectedItemsMap]);
 
   // track last requested per-row to avoid race conditions
   const lastRequestedRef = useRef<Record<string, string | null>>({});
@@ -238,7 +267,19 @@ export default function AddInventoryItemScreen() {
                   onChange={(value) => {
                     updateRow(r.id, { name: value });
                     if (value && nameToIconMap[value]) updateRow(r.id, { iconKey: nameToIconMap[value] });
-                    if (!value) {
+                    // apply defaults for known items (unit, storageLocation, count)
+                    if (value) {
+                      const def = DEFAULT_ITEM_SETTINGS[value];
+                      if (def) {
+                        updateRow(r.id, { unit: def.unit, storageLocation: def.storageLocation, count: def.count ?? '1' });
+                        // trigger prediction immediately using the selected storage
+                        fetchPredictionForRow(r.id, value, def.storageLocation);
+                      } else {
+                        // no defaults: clear prediction if needed
+                        lastRequestedRef.current[r.id] = null;
+                        updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
+                      }
+                    } else {
                       lastRequestedRef.current[r.id] = null;
                       updateRow(r.id, { shelfLifeDays: '7', predictedExpiryDate: null });
                     }
