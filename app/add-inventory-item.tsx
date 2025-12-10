@@ -386,10 +386,12 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 10,
     marginBottom: 24,
     backgroundColor: Colors.light.headerBg,
-    paddingVertical: 20,
+    paddingTop: 22,
+    paddingBottom: 16,
+    paddingLeft: 64,
     paddingHorizontal: 16,
     borderRadius: 0,
     borderBottomWidth: 0,
@@ -408,6 +410,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 6,
+    zIndex: 20,
   },
   backButtonText: {
     color: '#FFFFFF',
@@ -419,7 +422,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.light.headerText,
     letterSpacing: 0.5,
-    paddingTop: 40,
+    paddingTop: 0,
   },
   subtitle: {
     fontSize: 14,
