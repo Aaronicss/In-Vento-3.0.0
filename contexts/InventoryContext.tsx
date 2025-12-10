@@ -129,8 +129,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         const status = getStatus(progress);
 
         // Normalize unit: accept only known units, fallback to 'pcs' for safety
-        const knownUnits = ['pcs', 'g', 'slices'];
-        const rawUnit = (item.unit || '').toString();
+        const knownUnits = ['pcs', 'g', 'slices', 'gal'];
+        const rawUnit = (item.unit || '').toString().toLowerCase();
         const normalizedUnit = knownUnits.includes(rawUnit) ? rawUnit : 'pcs';
 
         return {
