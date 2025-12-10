@@ -19,7 +19,7 @@ export default function OrdersPage() {
       ) : (
         orders.map((order) => (
           <View key={order.id} style={styles.card}>
-            <Text style={styles.cardTitle}>Table #{order.tableNumber}</Text>
+            <Text style={styles.cardTitle}>Customer #{order.tableNumber}</Text>
             <Text style={styles.cardText}>{order.items.map((i:any) => `${i.quantity}x ${i.name}`).join(', ')}</Text>
             <PrimaryButton onPress={() => router.push('/(tabs)/home')}>Back</PrimaryButton>
           </View>

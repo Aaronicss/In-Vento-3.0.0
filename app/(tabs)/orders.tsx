@@ -129,7 +129,7 @@ export default function HomeScreen() {
           const currentProgress = calculateCurrentProgress(order);
           return (
             <View key={order.id} style={styles.orderSection}>
-              <Text style={styles.tableTitle}>TABLE #{order.tableNumber}</Text>
+              <Text style={styles.tableTitle}>CUSTOMER #{order.tableNumber}</Text>
               <ProgressBar 
                 progress={currentProgress} 
                 color={getProgressColor(currentProgress)} 
