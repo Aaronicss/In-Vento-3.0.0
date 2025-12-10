@@ -17,7 +17,10 @@ export default function InventoryScreen() {
     decrementCount,
     removeInventoryItem,
     refreshFreshnessPredictions,
+    refreshInventory,
   } = useInventory();
+  const [selectionMode, setSelectionMode] = useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [freshnessLoading, setFreshnessLoading] = useState(false);
 
@@ -213,6 +216,23 @@ export default function InventoryScreen() {
   const InventoryCard = ({ item, batchNo }: { item: any; batchNo: number }) => {
     return (
       <View style={styles.tileCard}>
+        {selectionMode && (
+          <TouchableOpacity
+            style={styles.checkbox}
+            onPress={() => {
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(item.id)) next.delete(item.id);
+                else next.add(item.id);
+                return next;
+              });
+            }}
+          >
+            <View style={[styles.checkboxInner, selectedIds.has(item.id) && styles.checkboxChecked]}>
+              {selectedIds.has(item.id) && <Text style={styles.checkboxTick}>✓</Text>}
+            </View>
+          </TouchableOpacity>
+        )}
         <View style={styles.tileCardRow}>
           <Image source={getIconSource(item.icon)} style={styles.cardIcon} />
 
@@ -278,6 +298,53 @@ export default function InventoryScreen() {
     );
   };
 
+  const bulkDeleteSelected = () => {
+    if (!selectedIds || selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    Alert.alert(
+      'Delete selected items',
+      `Are you sure you want to permanently delete ${count} item(s)? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const ids = Array.from(selectedIds);
+            // mark all as updating
+            setUpdatingItems((prev) => {
+              const next = new Set(prev);
+              ids.forEach(id => next.add(id));
+              return next;
+            });
+
+            for (const id of ids) {
+              try {
+                // remove each item sequentially to avoid overwhelming the DB
+                // and to keep semantics simple
+                // eslint-disable-next-line no-await-in-loop
+                await removeInventoryItem(id);
+              } catch (err) {
+                console.error('Error removing item', id, err);
+              }
+            }
+
+            // clear updating and refresh
+            setUpdatingItems(new Set());
+            setSelectedIds(new Set());
+            setSelectionMode(false);
+            try {
+              if (refreshInventory) await refreshInventory();
+            } catch (e) {
+              console.error('Error refreshing inventory after bulk delete', e);
+            }
+          }
+        }
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* Greeting */}
@@ -285,6 +352,30 @@ export default function InventoryScreen() {
 
       {/* Buttons */}
       <View style={styles.buttonContainer}>
+        <View style={styles.selectControls}>
+          <TouchableOpacity
+            style={[styles.smallControl, selectionMode && styles.smallControlActive]}
+            onPress={() => {
+              if (selectionMode) {
+                setSelectionMode(false);
+                setSelectedIds(new Set());
+              } else {
+                setSelectionMode(true);
+              }
+            }}
+          >
+            <Text style={styles.smallControlText}>{selectionMode ? 'Cancel' : 'Select Items'}</Text>
+          </TouchableOpacity>
+          {selectionMode && (
+            <TouchableOpacity
+              style={[styles.smallControl, { marginLeft: 10, backgroundColor: '#EF4444' }]}
+              onPress={bulkDeleteSelected}
+              disabled={selectedIds.size === 0}
+            >
+              <Text style={[styles.smallControlText, { color: '#fff' }]}>Delete Selected ({selectedIds.size})</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <PrimaryButton onPress={() => router.push('/add-inventory-item')}>ADD ITEM MANUALLY</PrimaryButton>
         <PrimaryButton
           onPress={() => router.push('/camera')}
@@ -395,6 +486,27 @@ const styles = StyleSheet.create({
   buttonContainer: {
     alignItems: "center",
     marginVertical: 12,
+  },
+  selectControls: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 12,
+  },
+  smallControl: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  smallControlActive: {
+    backgroundColor: Colors.light.tint,
+  },
+  smallControlText: {
+    fontWeight: '700',
+    color: '#111827',
   },
   button: {
     backgroundColor: Colors.light.tint,
@@ -812,5 +924,29 @@ const styles = StyleSheet.create({
   deliveredInfo: {
     alignItems: 'flex-end',
     marginLeft: 12,
+  },
+  checkbox: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    zIndex: 10,
+  },
+  checkboxInner: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.light.tint,
+    borderColor: Colors.light.tint,
+  },
+  checkboxTick: {
+    color: '#fff',
+    fontWeight: '800',
   },
 });
