@@ -164,7 +164,7 @@ export default function TakeOrderScreen() {
       Alert.alert('Order Added', `Order for Customer #${customerNumber} has been added!`, [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => router.push('/orders'),
         },
       ]);
     } catch (error: any) {
@@ -214,9 +214,18 @@ export default function TakeOrderScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>TAKE ORDER</Text>
-        <Text style={styles.subtitle}>Enter order details below</Text>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+
+        <View style={styles.header}>
+          <Text style={styles.title}>TAKE ORDER</Text>
+          <Text style={styles.subtitle}>Enter order details below</Text>
+        </View>
       </View>
 
       {/* Table Number Input */}
@@ -228,8 +237,6 @@ export default function TakeOrderScreen() {
           editable={false}
         />
       </View>
-
-      {/* Items Section */}
       {/* Recipe Guide: preview recipes and missing ingredients before selecting items */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -410,6 +417,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
     padding: 20,
   },
+  headerContainer: {
+    position: 'relative',
+    marginBottom: 10,
+    alignItems: 'center',
+  },
   header: {
     alignItems: 'center',
     marginTop: 30,
@@ -426,6 +438,26 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.light.headerText,
     letterSpacing: 0.5,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 12,
+    borderWidth: 0,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   subtitle: {
     fontSize: 14,

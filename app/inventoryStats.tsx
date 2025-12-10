@@ -57,7 +57,7 @@ export default function InventoryStats() {
   const avgCount = totalTypes > 0 ? (totalItems / totalTypes).toFixed(1) : 0;
 
   return (
-    <ScrollView style={styles.container}> 
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled"> 
       <View style={styles.headerContainer}>
   <TouchableOpacity
     style={styles.backButton}

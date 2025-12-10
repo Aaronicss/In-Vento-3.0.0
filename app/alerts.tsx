@@ -2,8 +2,8 @@ import PrimaryButton from '@/components/PrimaryButton';
 import { Colors } from '@/constants/theme';
 import { getLowStockThreshold } from '@/services/preferencesService';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useInventory } from '../contexts/InventoryContext';
 
 export default function AlertsPage() {
@@ -16,6 +16,19 @@ export default function AlertsPage() {
     getLowStockThreshold().then((t) => { if (mounted) setLowStockThreshold(t); });
     return () => { mounted = false; };
   }, []);
+
+  // Compute per-ingredient batch numbers based on creation order (oldest -> newest)
+  const batchNumberMap = useMemo(() => {
+    const byCreated = [...inventoryItems].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const counters: Record<string, number> = {};
+    const map: Record<string, number> = {};
+    for (const it of byCreated) {
+      const name = (it.name || '').toString().toUpperCase();
+      counters[name] = (counters[name] || 0) + 1;
+      map[it.id] = counters[name];
+    }
+    return map;
+  }, [inventoryItems]);
   // derive alerts with severity and sort them
   const alerts = inventoryItems
     .map((it) => {
@@ -40,8 +53,17 @@ export default function AlertsPage() {
     });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Alerts</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Alerts</Text>
+      </View>
       <Text style={{ marginBottom: 8, color: 'rgba(17,24,28,0.7)' }}>Low-stock threshold: {lowStockThreshold} items or less</Text>
 
       {/* Low-stock items */}
@@ -51,15 +73,23 @@ export default function AlertsPage() {
       ) : (
         inventoryItems
           .filter(i => i.count <= lowStockThreshold)
-          .map(i => (
-            <TouchableOpacity key={i.id} style={styles.card} onPress={() => router.push('/(tabs)/inventory')}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{i.name}</Text>
-                <Text style={{ fontWeight: '700' }}>{i.count} {i.unit}</Text>
-              </View>
-              <Text style={styles.cardText}>Storage: {(i.storageLocation || i.storage_location || 'UNKNOWN').toString().toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))
+          .map((i, idx) => {
+            const batchNo = batchNumberMap[i.id] ?? idx + 1;
+            return (
+              <TouchableOpacity key={i.id} style={styles.card} onPress={() => router.push('/(tabs)/inventory')}>
+                <View style={styles.cardHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.cardTitle}>{i.name}</Text>
+                    <View style={[styles.batchBadge, { marginLeft: 8 }]}> 
+                      <Text style={styles.batchBadgeText}>{`B${batchNo}`}</Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontWeight: '700' }}>{i.count} {i.unit}</Text>
+                </View>
+                <Text style={styles.cardText}>Storage: {(i.storageLocation || i.storage_location || 'UNKNOWN').toString().toUpperCase()}</Text>
+              </TouchableOpacity>
+            );
+          })
       )}
 
       {/* Expiry alerts (kept below) */}
@@ -81,13 +111,38 @@ export default function AlertsPage() {
           </View>
         ))
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background, padding: 20 },
-  title: { fontSize: 22, fontWeight: '800', color: Colors.light.text, marginBottom: 12 },
+  headerContainer: {
+    position: 'relative',
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 12,
+    borderWidth: 0,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  title: { fontSize: 22, fontWeight: '800', color: Colors.light.text, marginBottom: 12, paddingTop: 28 },
   empty: { alignItems: 'center', padding: 24, backgroundColor: '#FFF7ED', borderRadius: 12 },
   emptyText: { color: 'rgba(17,24,28,0.7)' },
   card: { backgroundColor: '#FFF7ED', padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(244,162,97,0.18)' },
@@ -101,4 +156,6 @@ const styles = StyleSheet.create({
   severityText: { fontSize: 12, fontWeight: '700', color: '#fff' },
   criticalPill: { backgroundColor: '#e63946' },
   warningPill: { backgroundColor: Colors.light.tint },
+  batchBadge: { backgroundColor: 'rgba(0,0,0,0.06)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8 },
+  batchBadgeText: { fontWeight: '800', color: '#000' },
 });

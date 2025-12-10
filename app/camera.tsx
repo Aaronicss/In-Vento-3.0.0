@@ -295,6 +295,12 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerGradient}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>📸 SCAN INVENTORY</Text>
       </View>
 
@@ -365,7 +371,7 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   headerGradient: {
-    paddingTop: 50,
+    paddingTop: 70,
     paddingBottom: 20,
     paddingHorizontal: 20,
     backgroundColor: 'rgba(244, 162, 97, 0.12)',
@@ -378,6 +384,26 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: Colors.light.text,
     letterSpacing: 0.5,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    top: 26,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 12,
+    borderWidth: 0,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
   headerSubtitle: {
     textAlign: "center",
