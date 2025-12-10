@@ -19,6 +19,11 @@ const availableIcons: { [key: string]: any } = {
   onion: require('../assets/onion.png'),
   burger: require('../assets/burger.png'),
   drink: require('../assets/drink.png'),
+  // placeholders: replace the require(...) paths with your actual condiment images
+  // e.g. ketchup: require('../assets/ketchup.png'),
+  ketchup: require('../assets/ketchup.png'),
+  mayo: require('../assets/mayo.png'),
+  mustard: require('../assets/mustard.png'),
 };
 
 const nameToIconMap: { [key: string]: string } = {
@@ -29,6 +34,9 @@ const nameToIconMap: { [key: string]: string } = {
   "CHEESE": "cheese",
   "TOMATO": "tomato",
   "ONION": "onion",
+  "KETCHUP": "ketchup",
+  "MAYO": "mayo",
+  "MUSTARD": "mustard",
   "BURGER": "burger",
   "DRINK": "drink",
 };
@@ -42,6 +50,9 @@ const DEFAULT_ITEM_SETTINGS: Record<string, { unit: string; storageLocation: str
   'ONION': { unit: 'pcs', storageLocation: 'REFRIGERATOR', count: '1' },
   'TOMATO': { unit: 'pcs', storageLocation: 'REFRIGERATOR', count: '1' },
   'PICKLES': { unit: 'g', storageLocation: 'REFRIGERATOR', count: '50' },
+  'KETCHUP': { unit: 'gal', storageLocation: 'PANTRY', count: '1' },
+  'MAYO': { unit: 'gal', storageLocation: 'PANTRY', count: '1' },
+  'MUSTARD': { unit: 'gal', storageLocation: 'PANTRY', count: '1' },
 };
 
 // Small helper to format a Date into a readable date + time string
@@ -72,7 +83,7 @@ export default function AddInventoryItemScreen() {
     if (detectedItemsMap && Object.keys(detectedItemsMap).length > 0) {
       // Build a map of normalized picker values so we can map detection labels to actual picker options
       const pickerOptions = [
-        'BURGER BUN', 'BEEF', 'LETTUCE', 'PICKLES', 'CHEESE', 'TOMATO', 'ONION',
+        'BURGER BUN', 'BEEF', 'LETTUCE', 'PICKLES', 'CHEESE', 'TOMATO', 'ONION', 'KETCHUP', 'MAYO', 'MUSTARD',
       ];
       const normalize = (s: string) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
       const normalizedToPicker: Record<string, string> = {};
@@ -103,7 +114,7 @@ export default function AddInventoryItemScreen() {
     if (detectedItem && detectedItem.name) {
       // try to match single detectedItem name to picker values
       const pickerOptions = [
-        'BURGER BUN', 'BEEF', 'LETTUCE', 'PICKLES', 'CHEESE', 'TOMATO', 'ONION',
+        'BURGER BUN', 'BEEF', 'LETTUCE', 'PICKLES', 'CHEESE', 'TOMATO', 'ONION', 'KETCHUP', 'MAYO', 'MUSTARD',
       ];
       const normalize = (s: string) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
       const norm = normalize(detectedItem.name);
@@ -272,6 +283,9 @@ export default function AddInventoryItemScreen() {
                     { label: 'CHEESE', value: 'CHEESE' },
                     { label: 'TOMATO', value: 'TOMATO' },
                     { label: 'ONION', value: 'ONION' },
+                    { label: 'KETCHUP', value: 'KETCHUP' },
+                    { label: 'MAYO', value: 'MAYO' },
+                    { label: 'MUSTARD', value: 'MUSTARD' },
                   ]}
                   onChange={(value) => {
                     updateRow(r.id, { name: value });
@@ -348,6 +362,7 @@ export default function AddInventoryItemScreen() {
                     { label: 'pcs', value: 'pcs' },
                     { label: 'g', value: 'g' },
                     { label: 'slices', value: 'slices' },
+                    { label: 'gal', value: 'gal' },
                   ]}
                   onChange={(val) => updateRow(r.id, { unit: val })}
                 />

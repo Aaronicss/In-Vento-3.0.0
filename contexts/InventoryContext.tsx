@@ -12,6 +12,10 @@ export const iconMap: { [key: string]: any } = {
   cheese: require('../assets/cheese.png'),
   tomato: require('../assets/tomato.png'),
   onion: require('../assets/onion.png'),
+  // Condiment images (added to assets folder)
+  ketchup: require('../assets/ketchup.png'),
+  mayo: require('../assets/mayo.png'),
+  mustard: require('../assets/mustard.png'),
   burger: require('../assets/burger.png'),
   drink: require('../assets/drink.png'),
 };
