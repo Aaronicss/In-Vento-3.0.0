@@ -48,17 +48,17 @@ export default function TileHome() {
   }, [entrance]);
 
   const tiles = [
-    { key: 'inventory', label: 'Inventory', route: '/(tabs)/inventory', icon: 'inventory', count: inventoryItems.length, bgColor: '#000000', textColor: '#ffffff' },
-    { key: 'orders', label: 'Orders', route: '/orders', icon: 'list.bullet', count: orders.length, bgColor: '#f59e0b', textColor: '#000000' },
-    { key: 'take-order', label: 'Take Order', route: '/take-order', icon: 'cart.fill', count: 0, bgColor: '#f59e0b', textColor: '#000000' },
-    { key: 'alerts', label: 'Alerts', route: '/alerts', icon: 'bell.fill', count: 0, bgColor: '#000000', textColor: '#ffffff' },
+    { key: 'orders', label: 'Orders', route: '/orders', icon: 'list.bullet', count: orders.length, bgColor: '#ffffff', textColor: '#000000', iconColor: '#f91616' },
+    { key: 'take-order', label: 'Take Order', route: '/take-order', icon: 'cart.fill', count: 0, bgColor: '#ffffff', textColor: '#000000', iconColor: '#8886FF' },
+    { key: 'inventory', label: 'Inventory', route: '/(tabs)/inventory', icon: 'inventory', count: inventoryItems.length, bgColor: '#ffffff', textColor: '#000000', iconColor: '#FF7E33' },
+    { key: 'alerts', label: 'Alerts', route: '/alerts', icon: 'bell.fill', count: 0, bgColor: '#ffffff', textColor: '#000000', iconColor: '#00B309' },
   ];
 
   const tiles2 = [
-    { title: "ITEMS IN\nINVENTORY", value: String(inventoryItems.length), bgColor: "#000000", textColor: "#ffffff", route: '/(tabs)/inventory' },
-    { title: "LOW\nSTOCK", value: "5", bgColor: "#f59e0b", textColor: "#000000", route: '/(tabs)/inventory' },
-    { title: "PENDING\nORDERS", value: String(orders.length), bgColor: "#f59e0b", textColor: "#000000", route: '/orders' },
-    { title: "TODAY’S\nSALES", value: "P11,509", bgColor: "#000000", textColor: "#ffffff", route: '/orders' },
+    { title: "Items in Inventory", value: String(inventoryItems.length), bgColor: "#ffffff", textColor: "#000000", route: '/(tabs)/inventory', image: require('../../assets/Logo1.png')},
+    { title: "Low Stock", value: "5", bgColor: "#ffffff", textColor: "#000000", route: '/(tabs)/inventory', image: require('../../assets/Logo2.png')},
+    { title: "Pending Orders", value: String(orders.length), bgColor: "#ffffff", textColor: "#000000", route: '/orders', image: require('../../assets/Logo1.png') },
+    { title: "Today's Sales", value: "P11,509", bgColor: "#ffffff", textColor: "#000000", route: '/orders', image: require('../../assets/Logo2.png') },
   ];
 
   // load recipe prices (merge from preferences service); used to compute order totals
@@ -131,38 +131,10 @@ export default function TileHome() {
           />
           <View style={styles.headerOverlay} />
           <View style={styles.headerCenter}> 
-            <Text style={styles.headerSubtitle}>INVENTORY DASHBOARD</Text>
+            <Text style={styles.headerSubtitle}>Navigate To:</Text>
           </View>
         </View>
-        <View style={styles.container2}>
-          {tiles2.map((tile, index) => {
-            const titleUp = tile.title ? tile.title.toUpperCase() : '';
-            const displayedValue = titleUp.includes('LOW')
-              ? String(lowStockCount)
-              : titleUp.includes('TODAY')
-              ? formatPHP(todaySales)
-              : tile.value;
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[styles.tile2, { backgroundColor: tile.bgColor }]}
-                activeOpacity={0.85}
-                onPress={() => tile.route ? router.push(tile.route as any) : undefined}
-              >
-                <Text style={[styles.tile2Title, { color: tile.textColor }]} numberOfLines={2} ellipsizeMode="tail">{tile.title}</Text>
-                <Text style={[styles.tile2Value, { color: tile.textColor }]} numberOfLines={1} ellipsizeMode="tail">{displayedValue}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <PrimaryButton onPress={() => router.push('/camera')} style={{ marginTop: 12, width: '100%' }}>SCAN INVENTORY</PrimaryButton>
-
-        {/* compute alerts count for badge */}
-        {/** derive alerts using same rule as alerts page */}
-        {/** this is a noop render block used to compute alertsCount in component scope */}
-        <></>
-
+        <PrimaryButton onPress={() => router.push('/camera')} style={{ marginTop: 12, width: '70%', }}>SCAN INVENTORY</PrimaryButton>
         <View style={styles.grid}>
           {tiles.map((t, idx) => {
             const animatedStyle = {
@@ -184,17 +156,64 @@ export default function TileHome() {
                   <View style={styles.tileHeaderRow}>
                     <Text style={[styles.tileLabel, { color: (t as any).textColor ?? Colors.light.tint }]}>{t.label}</Text>
                     {t.count > 0 && (
-                      <View style={[styles.badge, t.key === 'alerts' && (t as any).critical > 0 ? styles.criticalBadge : null]}>
+                      <View style={[styles.badge, styles.criticalBadge]}>
                         <Text style={styles.badgeText}>{t.count}</Text>
                       </View>
                     )}
                   </View>
 
                   <View style={styles.tileIconWrap}>
-                    <IconSymbol name={t.icon as any} size={64} color={(t as any).textColor ?? Colors.light.tint} />
+                    <IconSymbol name={t.icon as any} size={64} color={(t as any).iconColor ?? Colors.light.tint} />
                   </View>
                 </TouchableOpacity>
               </Animated.View>
+            );
+          })}
+        </View>
+
+            <Text style={styles.headerSubtitle}>Inventory Monitoring</Text>
+        <View style={styles.container2}>
+          {tiles2.map((tile, index) => {
+            const titleUp = tile.title ? tile.title.toUpperCase() : '';
+            const displayedValue = titleUp.includes('LOW')
+              ? String(lowStockCount)
+              : titleUp.includes('TODAY')
+              ? formatPHP(todaySales)
+              : tile.value;
+            return (
+              <TouchableOpacity
+  key={index}
+  style={[styles.tile2, { backgroundColor: tile.bgColor }]}
+  activeOpacity={0.85}
+  onPress={() => tile.route ? router.push(tile.route as any) : undefined}
+>
+  <View style={styles.tileRow}>
+    <Image
+      source={tile.image} // e.g., require('../assets/icon.png') or {uri: 'https://...'}
+      style={{ width: 40, height: 40, marginRight: 10 }}
+      resizeMode="contain"
+    />
+    <View style={styles.tileTextWrapper}>
+      <Text
+        style={[styles.tile2Value, { color: tile.textColor }]}
+        numberOfLines={1}
+      >
+        {displayedValue}
+      </Text>
+
+      <Text
+        style={[styles.tile2Title, { color: tile.textColor }]}
+        numberOfLines={2}
+      >
+        {tile.title}
+      </Text>
+    </View>
+
+    <Text style={[styles.tile2Sign, { color: tile.textColor }]}>
+      &gt;
+    </Text>
+  </View>
+</TouchableOpacity>
             );
           })}
         </View>
@@ -206,14 +225,14 @@ export default function TileHome() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-    padding: 20,
+    backgroundColor: '#D9D9D9',
+    padding: 0,
     alignItems: 'center',
   },
   container2: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     paddingHorizontal: 0,
     width: '100%',
   },
@@ -224,27 +243,31 @@ const styles = StyleSheet.create({
   },
   burgerImage: {
     width: screenWidth + 40, // extend to cover parent padding (full-bleed)
-    height: 220, // match header container height
+    height: 120, // match header container height
     alignSelf: 'center',
   },
   tile2: {
-    width: "48%",
-    height: 120,
-    borderRadius: 15,
+    width: "100%",
+    height: 80,
+    borderRadius: 0,
     padding: 15,
     marginBottom: 12,
     justifyContent: "space-between",
   },
   tile2Title: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
     lineHeight: 20,
     flexWrap: 'wrap',
     includeFontPadding: false,
   },
   tile2Value: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '900',
+    textAlign: 'left',
+  },
+  tile2Sign: {
+    fontSize: 24,
     textAlign: 'right',
   },
   title2: {
@@ -271,13 +294,13 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
   },
   tileWrapper: {
     marginBottom: 12,
   },
   twoCol: {
-    width: '48%'
+    width: '40%'
   },
   oneCol: {
     width: '100%'
@@ -344,7 +367,7 @@ const styles = StyleSheet.create({
   scanButton: {
     marginTop: 12,
     width: '100%',
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'Colors.light.tint',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -363,12 +386,11 @@ const styles = StyleSheet.create({
   /* Header with background image */
   headerContainer: {
     width: '100%',
-    height: 220,
+    height: 120,
     borderRadius: 0,
     overflow: 'hidden',
     marginBottom: 12,
     position: 'relative',
-    marginHorizontal: -20,
   },
   headerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -401,7 +423,7 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     position: 'absolute',
-    bottom: 18,
+    bottom: 0,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -410,13 +432,23 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     color: Colors.light.headerText,
-    backgroundColor: Colors.light.headerBg,
-    paddingVertical: 12,
+    backgroundColor: 'black',
+    paddingVertical: 5,
+    paddingLeft: 10,
     paddingHorizontal: 0,
     borderRadius: 0,
     alignSelf: 'stretch',
     marginHorizontal: 0,
-    textAlign: 'center',
+    textAlign: 'left',
     width: '100%'
   },
+  tileRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+
+tileTextWrapper: {
+  flex: 1,
+},
 });

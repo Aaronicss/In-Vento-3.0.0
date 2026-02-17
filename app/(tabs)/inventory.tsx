@@ -348,11 +348,34 @@ export default function InventoryScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Greeting */}
-      <Text style={styles.greeting}>DASHBOARD</Text>
+      <Text style={styles.greeting}>CONTROLS</Text>
 
       {/* Buttons */}
       <View style={styles.buttonContainer}>
-        <View style={styles.selectControls}>
+        
+        <PrimaryButton onPress={() => router.push('/add-inventory-item')} style={{
+          marginTop: 12, paddingVertical:20, paddingHorizontal:10, borderRadius: 15, backgroundColor: 'white', minHeight: 110}}><Text style={{ color: 'black', textAlign: 'center' }}>
+          ADD ITEM{"\n"}MANUALLY
+          </Text></PrimaryButton>
+        <PrimaryButton
+          onPress={() => router.push('/camera')}
+          style={{ 
+            marginTop: 12, shadowColor: '#f59e0b', paddingVertical:20, paddingHorizontal:10, borderRadius: 15, backgroundColor: 'black', minHeight: 110}}
+          textStyle={{ color: '#000' }}
+        >
+          <Text style={{ color: 'white', textAlign: 'center' }}>
+    USE{"\n"}COMPUTER{"\n"}VISION
+  </Text>
+        </PrimaryButton>
+        <PrimaryButton onPress={() => router.push('/inventoryStats')} style={{ 
+          marginTop: 12, paddingVertical:20, paddingHorizontal:10, borderRadius: 15, backgroundColor: 'white', minHeight: 110}}><Text style={{ color: 'black', textAlign: 'center' }}>
+          INVENTORY{"\n"}STATISTICS
+          </Text></PrimaryButton>
+      </View>
+
+      {/* Inventory Items Section */}
+      <Text style={styles.sectionTitle}>INVENTORY ITEMS</Text>
+      <View style={styles.selectControls}>
           <TouchableOpacity
             style={[styles.smallControl, selectionMode && styles.smallControlActive]}
             onPress={() => {
@@ -376,19 +399,6 @@ export default function InventoryScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <PrimaryButton onPress={() => router.push('/add-inventory-item')}>ADD ITEM MANUALLY</PrimaryButton>
-        <PrimaryButton
-          onPress={() => router.push('/camera')}
-          style={{ marginTop: 12, backgroundColor: '#f59e0b', shadowColor: '#f59e0b' }}
-          textStyle={{ color: '#000' }}
-        >
-          USE COMPUTER VISION
-        </PrimaryButton>
-        <PrimaryButton onPress={() => router.push('/inventoryStats')} style={{ marginTop: 12 }}>INVENTORY STATISTICS</PrimaryButton>
-      </View>
-
-      {/* Inventory Items Section */}
-      <Text style={styles.sectionTitle}>INVENTORY ITEMS</Text>
 
       {loading ? (
         <View style={styles.emptyInventory}>
@@ -427,8 +437,8 @@ export default function InventoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-    padding: 20,
+    backgroundColor: '#D9D9D9',
+    padding: 10,
   },
   header: {
     alignItems: "center",
@@ -478,12 +488,20 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 18,
     marginTop: 24,
-    marginBottom: 16,
+    marginBottom: 0,
     fontWeight: "700",
-    color: 'black',
+    color: 'white',
     letterSpacing: 0.3,
+    textAlign: 'center',
+    backgroundColor: 'black',
+    paddingVertical: 5,
+    paddingLeft: 10,
+    paddingHorizontal: 0,
+    borderRadius: 15
   },
   buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
     alignItems: "center",
     marginVertical: 12,
   },
@@ -502,7 +520,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.06)',
   },
   smallControlActive: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'white',
   },
   smallControlText: {
     fontWeight: '700',
@@ -533,8 +551,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 24,
     marginBottom: 14,
-    color: 'black',
+    color: 'white',
     letterSpacing: 0.3,
+    textAlign: 'center',
+    backgroundColor: 'black',
+    paddingVertical: 5,
+    paddingLeft: 10,
+    paddingHorizontal: 0,
+    borderRadius: 15
   },
   tilesContainer: {
     flexDirection: 'row',

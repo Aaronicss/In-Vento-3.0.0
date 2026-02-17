@@ -28,7 +28,10 @@ export default function RootLayout() {
   const Header = () => (
     <SafeAreaView style={styles.headerSafeArea}>
       <View style={styles.header}>
+        <View style={styles.titleContainer}>
         <Text style={styles.headerTitle}>IN-VENTO</Text>
+        <Text style={styles.headerSubtitle}>a burger a day keeps the day okay</Text>
+        </View>
         <TouchableOpacity
           style={styles.profile}
           onPress={() => setSidebarOpen(true)}
@@ -98,6 +101,15 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: Colors.light.headerBg,
   },
+  titleContainer: {
+
+  },
+  headerSubtitle: {
+  fontSize: 10,
+  color: '#FFFFFF',
+  opacity: 1,
+  letterSpacing: 1,
+},
   headerTitle: {
     color: Colors.light.headerText,
     fontSize: 24,
@@ -139,6 +151,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   sidebarTitle: {
+    marginTop: 30,
     fontSize: 18,
     fontWeight: '800',
     marginBottom: 12,
@@ -156,6 +169,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   logoutButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#FF3434',
   },
 });

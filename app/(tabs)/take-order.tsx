@@ -219,7 +219,7 @@ export default function TakeOrderScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>{"< "} Back</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -306,7 +306,7 @@ export default function TakeOrderScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.label}>Order Items</Text>
-            <TouchableOpacity style={styles.addButton} onPress={addItem}>
+            <TouchableOpacity style={[styles.addButton, {backgroundColor: '#FF3434'}]} onPress={addItem}>
               <Text style={styles.addButtonText}>+ Add Item</Text>
             </TouchableOpacity>
         </View>
@@ -414,7 +414,7 @@ export default function TakeOrderScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#D9D9D9',
     padding: 20,
   },
   headerContainer: {
@@ -426,10 +426,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 30,
     marginBottom: 24,
-    backgroundColor: Colors.light.headerBg,
+    backgroundColor: 'black',
     paddingVertical: 20,
     paddingHorizontal: 16,
-    borderRadius: 0,
+    borderRadius: 15,
     borderWidth: 0,
     borderColor: 'transparent',
   },
@@ -445,17 +445,18 @@ const styles = StyleSheet.create({
     top: 0,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'white',
     borderRadius: 12,
-    borderWidth: 0,
+    borderWidth: 2,
     shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 2, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 6,
+    zIndex: 20,
   },
   backButtonText: {
-    color: '#FFFFFF',
+    color: 'black',
     fontWeight: '700',
     fontSize: 14,
   },
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.light.tint,
+    borderLeftColor: '#FF3434',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
   itemNumber: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.light.tint,
+    color: '#FF3434',
   },
   removeButton: {
     paddingVertical: 6,
@@ -543,7 +544,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quantityButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#FF3434',
     width: 32,
     height: 32,
     borderRadius: 8,
@@ -579,12 +580,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   addButtonText: {
-    color: '#000',
+    color: 'white',
     fontSize: 12,
     fontWeight: '700',
   },
   confirmButton: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#FF3434',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
@@ -597,7 +598,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   confirmButtonText: {
-    color: '#000',
+    color: 'white',
     fontWeight: '700',
     fontSize: 16,
     letterSpacing: 0.5,
@@ -613,7 +614,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: Colors.light.tint,
+    color: '#FF3434',
     marginBottom: 8,
   },
   summaryRow: {
@@ -655,7 +656,7 @@ const styles = StyleSheet.create({
   orderTotalValue: {
     fontSize: 18,
     fontWeight: '900',
-    color: Colors.light.tint,
+    color: '#FF3434',
   },
   recipeRow: {
     flexDirection: 'row',
@@ -664,7 +665,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
     marginBottom: 8,
   },
   recipeName: {
@@ -694,7 +695,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   qtySmallBtn: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#FF3434',
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,

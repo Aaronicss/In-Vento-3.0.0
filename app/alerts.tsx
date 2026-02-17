@@ -86,7 +86,7 @@ export default function AlertsPage() {
                   </View>
                   <Text style={{ fontWeight: '700' }}>{i.count} {i.unit}</Text>
                 </View>
-                <Text style={styles.cardText}>Storage: {(i.storageLocation || i.storage_location || 'UNKNOWN').toString().toUpperCase()}</Text>
+                <Text style={styles.cardText}>Storage: {(i.storageLocation || 'UNKNOWN').toString().toUpperCase()}</Text>
               </TouchableOpacity>
             );
           })
@@ -116,7 +116,7 @@ export default function AlertsPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background, padding: 20 },
+  container: { flex: 1, backgroundColor: '#D9D9D9', padding: 20 },
   headerContainer: {
     position: 'relative',
     marginBottom: 10,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     top: 0,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'black',
     borderRadius: 12,
     borderWidth: 0,
     shadowColor: Colors.light.tint,
@@ -145,11 +145,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '800', color: Colors.light.text, marginBottom: 12, paddingTop: 28 },
   empty: { alignItems: 'center', padding: 24, backgroundColor: '#FFF7ED', borderRadius: 12 },
   emptyText: { color: 'rgba(17,24,28,0.7)' },
-  card: { backgroundColor: '#FFF7ED', padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(244,162,97,0.18)' },
+  card: { backgroundColor: 'white', padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(244,162,97,0.18)' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontWeight: '800', color: Colors.light.tint },
+  cardTitle: { fontWeight: '800', color: '#FF3434' },
   cardText: { color: 'rgba(17,24,28,0.8)', marginTop: 6 },
-  cardSubText: { color: 'rgba(17,24,28,0.7)', marginTop: 6 },
+  cardSubText: { color: 'rgba(17,24,28,0.7)', marginTop: 6, marginBottom: 10 },
   button: { marginTop: 8, backgroundColor: Colors.light.tint, padding: 10, borderRadius: 10, alignSelf: 'flex-start' },
   buttonText: { color: '#FFFFFF', fontWeight: '700' },
   severityPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },

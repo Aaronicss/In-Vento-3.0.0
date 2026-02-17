@@ -182,7 +182,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#D9D9D9',
     padding: 20,
   },
   header: { 
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyOrders: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',

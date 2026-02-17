@@ -165,7 +165,7 @@ export default function AccountsScreen() {
       </View>
       <View style={{ marginTop: 12 }}>
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#d9534f' }]}
+          style={[styles.button, { backgroundColor: '#FF3434' }]}
           onPress={async () => {
             try {
               setLoading(true);
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   button: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'black',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 12,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'black',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   backButtonText: {
-    color: '#fff',
+    color: 'white',
     fontWeight: '700',
     fontSize: 16,
   },
@@ -280,15 +280,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'black',
   },
   cancelBtn: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: Colors.light.tint,
+    borderColor: '#FF3434',
   },
   cancelBtnText: {
-    color: Colors.light.tint,
+    color: '#FF3434',
     fontWeight: '700',
   },
 });

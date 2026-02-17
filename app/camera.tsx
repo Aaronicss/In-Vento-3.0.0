@@ -299,9 +299,9 @@ export default function CameraScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>&lt; Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📸 SCAN INVENTORY</Text>
+        <Text style={styles.headerTitle}>SCAN INVENTORY</Text>
       </View>
 
       <CameraView ref={cameraRef} style={styles.camera} />
@@ -357,7 +357,7 @@ export default function CameraScreen() {
 
               <View style={styles.captureHintWrapper}>
                 <Text style={styles.captureHintText}>
-                  {loading ? '🔍 Analyzing...' : autoCaptureActive ? `Next: ${countdown}s` : '📷 Tap to Capture'}
+                  {loading ? '🔍 Analyzing...' : autoCaptureActive ? `Next: ${countdown}s` : 'Tap to Capture'}
                 </Text>
               </View>
             </View>
@@ -371,39 +371,38 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   headerGradient: {
-    paddingTop: 70,
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(244, 162, 97, 0.12)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(244, 162, 97, 0.18)',
+    backgroundColor: '#FF3434',
+    borderBottomWidth: 10,
+    borderBottomColor: 'rgba(0, 0, 0, 1)',
+
+    flexDirection:'row',
+    alignItems:'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   headerTitle: {
     textAlign: "center",
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: "800",
-    color: Colors.light.text,
+    color: 'white',
     letterSpacing: 0.5,
+    position: 'absolute',
   },
   backButton: {
     position: 'absolute',
-    left: 16,
-    top: 26,
+    left: 20,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'white',
     borderRadius: 12,
-    borderWidth: 0,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
   },
   backButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
+    color: '#000000',
+    fontWeight: '500',
+    fontSize: 15,
   },
   headerSubtitle: {
     textAlign: "center",
@@ -421,8 +420,8 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
-    margin: 20,
-    borderRadius: 24,
+    margin: 0,
+    borderRadius: 0,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -432,31 +431,36 @@ const styles = StyleSheet.create({
   },
   captureContainer: {
     position: "absolute",
-    bottom: 50,
-    alignSelf: "center",
+    bottom: 20,
+    left: 0,
+    right: 0,
     alignItems: "center",
   },
-  captureButton: {
-    backgroundColor: Colors.light.tint,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 6,
-    borderColor: "#FFFFFF",
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  captureButtonInner: {
-    width: 78,
-    height: 78,
-    borderRadius: 39,
-    backgroundColor: "#FFFFFF",
-  },
+captureButton: {
+  backgroundColor: '#FF3434',
+  width: 70,
+  height: 70,
+  borderRadius: 35,
+
+  justifyContent: "center",
+  alignItems: "center",
+
+  borderWidth: 4,
+  borderColor: "#FFFFFF",
+
+  shadowColor: Colors.light.tint,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 6,
+  elevation: 6,
+},
+
+captureButtonInner: {
+  width: 52,
+  height: 52,
+  borderRadius: 26,
+  backgroundColor: "#FFFFFF",
+},
   captureHint: {
     marginTop: 16,
     fontSize: 16,
@@ -504,7 +508,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'white',
   },
   autoToggleButtonPaused: {
     backgroundColor: 'rgba(0,0,0,0.12)'
@@ -515,7 +519,6 @@ const styles = StyleSheet.create({
   },
   autoToggleTextPaused: {
     color: '#fff',
-    opacity: 0.8,
   },
   resetButton: {
     backgroundColor: 'transparent',
@@ -530,24 +533,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   doneButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'white',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
   },
   doneButtonText: {
-    color: '#fff',
+    color: 'black',
     fontWeight: '800',
   },
   bottomPanel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    alignSelf: 'center',
-    gap: 12,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+
+  backgroundColor: "rgba(255,255,255,0.1)",
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+
+  borderRadius: 25,
+  marginHorizontal: 20,
+
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.2)",
+  
   },
   controlsRight: {
     marginLeft: 12,

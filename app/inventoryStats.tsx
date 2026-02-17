@@ -61,7 +61,7 @@ export default function InventoryStats() {
       <View style={styles.headerContainer}>
   <TouchableOpacity
     style={styles.backButton}
-    onPress={() => router.push('/inventory')}
+    onPress={() => router.back()}
   >
     <Text style={styles.backButtonText}>← Back</Text>
   </TouchableOpacity>
@@ -95,7 +95,7 @@ export default function InventoryStats() {
             backgroundGradientFrom: Colors.light.background,
             backgroundGradientTo: Colors.light.background,
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(244, 162, 97, ${opacity})`,
+            color: (opacity = 1) => '#FF3434',
             labelColor: (opacity = 1) => `rgba(17, 24, 28, ${opacity})`,
             style: { borderRadius: 12, paddingBottom: 12 }, // smaller padding now sufficient for rotated labels
             propsForBackgroundLines: { stroke: 'rgba(244, 162, 97, 0.12)', strokeDasharray: '' },
@@ -171,7 +171,7 @@ backButton: {
   top: 0,
   paddingVertical: 8,
   paddingHorizontal: 16,
-  backgroundColor: Colors.light.tint,
+  backgroundColor: "black",
   borderRadius: 12,
   borderWidth: 0,
   shadowColor: Colors.light.tint,
@@ -209,7 +209,7 @@ backButtonText: {
   },
   statsSection: {
     padding: 16,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 4 },
@@ -218,6 +218,7 @@ backButtonText: {
     elevation: 5,
     borderWidth: 1,
     borderColor: 'rgba(244, 162, 97, 0.18)',
+    marginBottom: 30,
   },
   statsTitle: {
     fontSize: 16,

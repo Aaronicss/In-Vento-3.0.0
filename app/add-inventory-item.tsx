@@ -247,7 +247,7 @@ export default function AddInventoryItemScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>{"< "} Back</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -403,12 +403,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 24,
-    backgroundColor: Colors.light.headerBg,
+    backgroundColor: 'black',
     paddingTop: 22,
     paddingBottom: 16,
     paddingLeft: 64,
     paddingHorizontal: 16,
-    borderRadius: 0,
+    borderRadius: 10,
     borderBottomWidth: 0,
   },
   backButton: {
@@ -417,9 +417,9 @@ const styles = StyleSheet.create({
     top: 0,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'white',
     borderRadius: 12,
-    borderWidth: 0,
+    borderWidth: 2,
     shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   backButtonText: {
-    color: '#FFFFFF',
+    color: 'black',
     fontWeight: '700',
     fontSize: 14,
   },
@@ -438,6 +438,7 @@ const styles = StyleSheet.create({
     color: Colors.light.headerText,
     letterSpacing: 0.5,
     paddingTop: 0,
+    textAlign: 'center'
   },
   subtitle: {
     fontSize: 14,
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.light.tint,
+    color: 'black',
     marginBottom: 10,
   },
   input: {
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: Colors.light.tint,
+    borderColor: '#FF3434',
     marginBottom: 12,
     color: Colors.light.text,
   },
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.light.tint,
+    borderColor: '#FF3434',
     marginBottom: 12,
   },
   predictionCard: {
@@ -495,14 +496,14 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderLeftWidth: 5,
-    borderLeftColor: Colors.light.tint,
+    borderLeftColor:'#FF3434',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
   },
   predictionLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.light.tint,
+    color: '#FF3434',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
     marginBottom: 6,
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.light.tint,
+    borderLeftColor: '#FF3434',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
   },
@@ -554,12 +555,12 @@ const styles = StyleSheet.create({
   itemNumber: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.light.tint,
+    color: '#FF3434',
   },
   removeButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: '#FF5252',
+    backgroundColor: '#FF3434',
     borderRadius: 8,
   },
   removeButtonText: {
@@ -568,7 +569,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   addButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#FF3434',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 12,

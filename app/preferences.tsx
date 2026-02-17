@@ -78,7 +78,7 @@ export default function PreferencesScreen() {
           onChangeText={setInput}
           keyboardType="number-pad"
           placeholder={String(DEFAULT_THRESHOLD)}
-          style={{ backgroundColor: '#fff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: Colors.light.tint }}
+          style={{ backgroundColor: '#fff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FF3434' }}
         />
 
         <TouchableOpacity style={[styles.backButton, { marginTop: 12 }]} onPress={save}>
@@ -96,7 +96,7 @@ export default function PreferencesScreen() {
               value={prices[r] ?? String(DEFAULT_PRICES[r] ?? '')}
               onChangeText={(v) => setPrices(prev => ({ ...prev, [r]: v }))}
               keyboardType="numeric"
-              style={{ width: 100, backgroundColor: '#fff', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: Colors.light.tint }}
+              style={{ width: 100, backgroundColor: '#fff', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#FF3434' }}
             />
           </View>
         ))}
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 12,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: 'black',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',

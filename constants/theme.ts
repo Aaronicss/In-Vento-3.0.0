@@ -18,7 +18,7 @@ export const Colors = {
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
     // Header / global primary styles (home uses black/white scheme)
-    headerBg: '#000000',
+    headerBg: '#FF3434',
     headerText: '#FFFFFF',
     primaryButtonBg: '#000000',
     primaryButtonText: '#FFFFFF',

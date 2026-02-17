@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#FF3434',
     position: 'relative',
     paddingHorizontal: 20,
   },
@@ -343,12 +343,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
     borderWidth: 1,
-    borderColor: Colors.light.tint,
+    borderColor: '#FF3434',
   },
   buttonDisabled: {
     opacity: 0.6,
   },
-  buttonText: { textAlign: 'center', fontWeight: '700', color: Colors.light.tint, fontSize: 16 },
+  buttonText: { textAlign: 'center', fontWeight: '700', color: '#FF3434', fontSize: 16 },
   switchButton: {
     marginTop: 15,
     padding: 10,
